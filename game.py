@@ -176,7 +176,73 @@ def ucs(initial_state):
                 frontier.put((cost + 1, neighbor, path + [neighbor]))
     
     return None
-def draw_grid(state, solution=None, step_index=0, show_menu=False, current_algorithm='BFS', solve_time=0):
+# Add heuristic function after is_goal function
+def manhattan_distance(state):
+    """Calculate Manhattan distance heuristic"""
+    distance = 0
+    for i in range(GRID_SIZE):
+        for j in range(GRID_SIZE):
+            if state[i][j] != 0:  # Don't count the blank tile
+                # Find where this number should be in goal state
+                for gi in range(GRID_SIZE):
+                    for gj in range(GRID_SIZE):
+                        if goal_state[gi][gj] == state[i][j]:
+                            distance += abs(gi - i) + abs(gj - j)
+                            break
+    return distance
+
+# Add A* algorithm after UCS
+def astar(initial_state):
+    """A* Search implementation"""
+    start_time = time.time()
+    
+    # Priority queue of (f_score, state, path)
+    # f_score = g_score (path length) + h_score (manhattan distance)
+    frontier = PriorityQueue()
+    frontier.put((manhattan_distance(initial_state), 0, initial_state, [initial_state]))
+    visited = {state_to_tuple(initial_state)}
+    
+    while not frontier.empty() and time.time() - start_time < 30:
+        f_score, g_score, current_state, path = frontier.get()
+        
+        if is_goal(current_state):
+            return path
+        
+        for neighbor in get_neighbors(current_state):
+            neighbor_tuple = state_to_tuple(neighbor)
+            if neighbor_tuple not in visited:
+                visited.add(neighbor_tuple)
+                g = g_score + 1  # One more step
+                h = manhattan_distance(neighbor)
+                f = g + h
+                frontier.put((f, g, neighbor, path + [neighbor]))
+    
+    return None
+
+def greedy(initial_state):
+    """Greedy Search implementation using Manhattan distance heuristic"""
+    start_time = time.time()
+    
+    # Priority queue of (heuristic_value, state, path)
+    frontier = PriorityQueue()
+    frontier.put((manhattan_distance(initial_state), initial_state, [initial_state]))
+    visited = {state_to_tuple(initial_state)}
+    
+    while not frontier.empty() and time.time() - start_time < 30:
+        _, current_state, path = frontier.get()
+        
+        if is_goal(current_state):
+            return path
+        
+        for neighbor in get_neighbors(current_state):
+            neighbor_tuple = state_to_tuple(neighbor)
+            if neighbor_tuple not in visited:
+                visited.add(neighbor_tuple)
+                h = manhattan_distance(neighbor)  # Only use heuristic value
+                frontier.put((h, neighbor, path + [neighbor]))
+    
+    return None
+def draw_grid(state, solution=None, step_index=0, show_menu=False, current_algorithm='BFS', solve_times=None):
     screen.fill(WHITE)
     
     # Calculate x offset based on menu state
@@ -218,13 +284,26 @@ def draw_grid(state, solution=None, step_index=0, show_menu=False, current_algor
     if solution:
         info_x = current_state_x + (CELL_SIZE * GRID_SIZE) + 20  # Right of current state
         
-        # Time info
-        time_text = BUTTON_FONT.render(f"Time: {solve_time:.3f}s", True, BLACK)
-        screen.blit(time_text, (info_x, current_state_y))
+        # Algorithm name and current solve time
+        algo_text = BUTTON_FONT.render(f"Algorithm: {current_algorithm}", True, BLACK)
+        screen.blit(algo_text, (info_x, current_state_y - 35))
+        
+        # Time info - get from solve_times dictionary
+        if solve_times and current_algorithm in solve_times:
+            time_text = BUTTON_FONT.render(f"Time: {solve_times[current_algorithm]:.3f}s", True, BLACK)
+            screen.blit(time_text, (info_x, current_state_y))
         
         # Steps info
         steps_text = BUTTON_FONT.render(f"Steps: {len(solution)-1}", True, BLACK)
         screen.blit(steps_text, (info_x, current_state_y + 35))
+        
+        # Draw comparison of all algorithm times
+        if solve_times:
+            compare_y = current_state_y + 100
+            for algo, time in solve_times.items():
+                compare_text = BUTTON_FONT.render(f"{algo}: {time:.3f}s", True, BLACK)
+                screen.blit(compare_text, (info_x, compare_y))
+                compare_y += 30
     
     # Draw menu
     mouse_pos = pygame.mouse.get_pos()
@@ -312,9 +391,30 @@ def draw_menu(show_menu, mouse_pos, current_algorithm):
     ucs_text = BUTTON_FONT.render("UCS", True, WHITE)
     screen.blit(ucs_text, (ucs_button.centerx - ucs_text.get_width()//2,
                           ucs_button.centery - ucs_text.get_height()//2))
+    # A* button
+    astar_rect = pygame.Rect(20, 380, MENU_WIDTH - 40, 50)
+    astar_color = MENU_HOVER_COLOR if current_algorithm == 'A*' else MENU_BUTTON_COLOR
+    if astar_rect.collidepoint(mouse_pos):
+        astar_color = MENU_HOVER_COLOR
+    astar_button = pygame.draw.rect(screen, astar_color, astar_rect)
+    astar_text = BUTTON_FONT.render("A*", True, WHITE)
+    screen.blit(astar_text, (astar_button.centerx - astar_text.get_width()//2,
+                            astar_button.centery - astar_text.get_height()//2))
     
-    return menu_rect, close_button, bfs_button, dfs_button, ids_button, ucs_button
-
+    
+    # In draw_menu function, add after A* button
+    # Greedy button
+    greedy_rect = pygame.Rect(20, 450, MENU_WIDTH - 40, 50)
+    greedy_color = MENU_HOVER_COLOR if current_algorithm == 'Greedy' else MENU_BUTTON_COLOR
+    if greedy_rect.collidepoint(mouse_pos):
+        greedy_color = MENU_HOVER_COLOR
+    greedy_button = pygame.draw.rect(screen, greedy_color, greedy_rect)
+    greedy_text = BUTTON_FONT.render("Greedy", True, WHITE)
+    screen.blit(greedy_text, (greedy_button.centerx - greedy_text.get_width()//2,
+                             greedy_button.centery - greedy_text.get_height()//2))
+    
+    return menu_rect, close_button, bfs_button, dfs_button, ids_button, ucs_button, astar_button, greedy_button
+    
 def show_popup(message):
     """Show a popup message window"""
     popup_surface = pygame.Surface((POPUP_WIDTH, POPUP_HEIGHT))
@@ -379,12 +479,13 @@ def main():
     running = True
     current_algorithm = 'BFS'  # Default algorithm
     solve_time = 0  # Add this variable
+    solve_times = {}  # Dictionary to store times for each algorithm
     
     while running:
         current_time = time.time()
         mouse_pos = pygame.mouse.get_pos()
         menu_elements = draw_grid(current_state, solution, step_index, show_menu, 
-                                current_algorithm, solve_time)  # Add solve_time
+                                current_algorithm, solve_times)  # Pass solve_times instead of solve_time
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -411,7 +512,7 @@ def main():
                             solution = None  # Reset solution when starting new solve
                 else:
                     if isinstance(menu_elements, tuple):
-                        _, close_button, bfs_button, dfs_button, ids_button, ucs_button = menu_elements
+                        _, close_button, bfs_button, dfs_button, ids_button, ucs_button, astar_button, greedy_button = menu_elements
                         if close_button.collidepoint(x, y):
                             show_menu = False
                         elif bfs_button.collidepoint(x, y):
@@ -426,25 +527,38 @@ def main():
                         elif ucs_button.collidepoint(x, y):
                             current_algorithm = 'UCS'
                             show_menu = False
+                        elif astar_button.collidepoint(x, y):
+                            current_algorithm = 'A*'
+                            show_menu = False
+                        elif greedy_button.collidepoint(x, y):
+                            current_algorithm = 'Greedy'
+                            show_menu = False
 
         # Solve puzzle with selected algorithm
         if solving:
             solving = False
             try:
-                solve_start_time = time.time()  # Track start time
+                solve_start = time.time()
+                
                 if current_algorithm == 'BFS':
                     solution = bfs(current_state)
                 elif current_algorithm == 'DFS':
                     solution = dfs(current_state)
                 elif current_algorithm == 'IDS':
                     solution = ids(current_state)
-                else:  # UCS
+                elif current_algorithm == 'UCS':
                     solution = ucs(current_state)
-                solve_time = time.time() - solve_start_time  # Calculate solving time
+                elif current_algorithm == 'A*':
+                    solution = astar(current_state)
+                else:  # Greedy
+                    solution = greedy(current_state)
+                
+                solve_duration = time.time() - solve_start
                 
                 if solution:
                     step_index = 0
                     current_state = copy.deepcopy(solution[step_index])
+                    solve_times[current_algorithm] = solve_duration
                 else:
                     show_popup(f"No solution found with {current_algorithm}!")
                     auto_solve = False
