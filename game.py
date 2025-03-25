@@ -31,7 +31,7 @@ INFO_BG = (220, 220, 220)
 POPUP_WIDTH = 400
 POPUP_HEIGHT = 200
 
-# Tạo cửa sổ
+
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 # Fixed method name
 
@@ -65,7 +65,7 @@ def get_neighbors(state):
     neighbors = []
     empty_i, empty_j = find_empty(state)
     
-    # Các hướng di chuyển: lên, xuống, trái, phải
+   
     directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
     
     for di, dj in directions:
@@ -86,7 +86,7 @@ def state_to_tuple(state):
 # Thuật toán BFS
 def bfs(initial_state):
     start_time = time.time()
-    queue = deque([(initial_state, [initial_state])])  # Store state and path
+    queue = deque([(initial_state, [initial_state])]) 
     visited = {state_to_tuple(initial_state)}
     
     while queue and time.time() - start_time < 30:
@@ -105,7 +105,7 @@ def bfs(initial_state):
 
 def dfs(initial_state, max_depth=30):
     start_time = time.time()
-    stack = [(initial_state, [initial_state], 0)]  # (state, path, depth)
+    stack = [(initial_state, [initial_state], 0)]  
     visited = {state_to_tuple(initial_state)}
     
     while stack and time.time() - start_time < 30:
@@ -116,7 +116,7 @@ def dfs(initial_state, max_depth=30):
             
         if depth < max_depth:
             neighbors = get_neighbors(current_state)
-            for neighbor in reversed(neighbors):  # Reverse to maintain correct order
+            for neighbor in reversed(neighbors):
                 neighbor_tuple = state_to_tuple(neighbor)
                 if neighbor_tuple not in visited:
                     visited.add(neighbor_tuple)
@@ -128,7 +128,7 @@ def ids(initial_state, max_depth=30):
     start_time = time.time()
     
     for depth_limit in range(max_depth):
-        stack = [(initial_state, [initial_state], 0)]  # (state, path, depth)
+        stack = [(initial_state, [initial_state], 0)]  
         visited = {state_to_tuple(initial_state)}
         
         while stack and time.time() - start_time < 30:
@@ -145,7 +145,7 @@ def ids(initial_state, max_depth=30):
                         visited.add(neighbor_tuple)
                         stack.append((neighbor, path + [neighbor], depth + 1))
         
-        # Clear visited states for next iteration
+       
         if time.time() - start_time >= 30:
             break
             
@@ -157,7 +157,7 @@ def ucs(initial_state):
     from queue import PriorityQueue
     start_time = time.time()
     
-    # Priority queue of (cost, state, path)
+  
     frontier = PriorityQueue()
     frontier.put((0, initial_state, [initial_state]))
     visited = {state_to_tuple(initial_state)}
@@ -172,18 +172,16 @@ def ucs(initial_state):
             neighbor_tuple = state_to_tuple(neighbor)
             if neighbor_tuple not in visited:
                 visited.add(neighbor_tuple)
-                # Cost is incremented by 1 for each move
                 frontier.put((cost + 1, neighbor, path + [neighbor]))
     
     return None
-# Add heuristic function after is_goal function
+
 def manhattan_distance(state):
     """Calculate Manhattan distance heuristic"""
     distance = 0
     for i in range(GRID_SIZE):
         for j in range(GRID_SIZE):
-            if state[i][j] != 0:  # Don't count the blank tile
-                # Find where this number should be in goal state
+            if state[i][j] != 0:
                 for gi in range(GRID_SIZE):
                     for gj in range(GRID_SIZE):
                         if goal_state[gi][gj] == state[i][j]:
@@ -191,13 +189,10 @@ def manhattan_distance(state):
                             break
     return distance
 
-# Add A* algorithm after UCS
+
 def astar(initial_state):
     """A* Search implementation"""
     start_time = time.time()
-    
-    # Priority queue of (f_score, state, path)
-    # f_score = g_score (path length) + h_score (manhattan distance)
     frontier = PriorityQueue()
     frontier.put((manhattan_distance(initial_state), 0, initial_state, [initial_state]))
     visited = {state_to_tuple(initial_state)}
@@ -212,7 +207,7 @@ def astar(initial_state):
             neighbor_tuple = state_to_tuple(neighbor)
             if neighbor_tuple not in visited:
                 visited.add(neighbor_tuple)
-                g = g_score + 1  # One more step
+                g = g_score + 1 
                 h = manhattan_distance(neighbor)
                 f = g + h
                 frontier.put((f, g, neighbor, path + [neighbor]))
@@ -222,8 +217,6 @@ def astar(initial_state):
 def greedy(initial_state):
     """Greedy Search implementation using Manhattan distance heuristic"""
     start_time = time.time()
-    
-    # Priority queue of (heuristic_value, state, path)
     frontier = PriorityQueue()
     frontier.put((manhattan_distance(initial_state), initial_state, [initial_state]))
     visited = {state_to_tuple(initial_state)}
@@ -238,40 +231,61 @@ def greedy(initial_state):
             neighbor_tuple = state_to_tuple(neighbor)
             if neighbor_tuple not in visited:
                 visited.add(neighbor_tuple)
-                h = manhattan_distance(neighbor)  # Only use heuristic value
+                h = manhattan_distance(neighbor)
                 frontier.put((h, neighbor, path + [neighbor]))
     
     return None
+def ida_star(initial_state):
+    """IDA* Search implementation"""
+    def search(path, g, threshold):
+        current_state = path[-1]
+        f = g + manhattan_distance(current_state)
+        if f > threshold:
+            return f, None
+        if is_goal(current_state):
+            return f, path
+        min_threshold = float('inf')
+        for neighbor in get_neighbors(current_state):
+            if neighbor not in path:
+                path.append(neighbor)
+                t, result = search(path, g + 1, threshold)
+                if result is not None:
+                    return t, result
+                if t < min_threshold:
+                    min_threshold = t
+                path.pop()
+        return min_threshold, None
+
+    threshold = manhattan_distance(initial_state)
+    path = [initial_state]
+    while True:
+        t, result = search(path, 0, threshold)
+        if result is not None:
+            return result
+        if t == float('inf'):
+            return None
+        threshold = t
 def draw_grid(state, solution=None, step_index=0, show_menu=False, current_algorithm='BFS', solve_times=None):
     screen.fill(WHITE)
-    
-    # Calculate x offset based on menu state
     x_offset = MENU_WIDTH if show_menu else 0
     main_width = WIDTH - x_offset
-    
-    # Draw initial state (left-top) - Added title
     draw_state(initial_state, 
               x_offset + GRID_PADDING + 20, 
               GRID_PADDING,
               "Initial State")
-    
-    # Draw goal state (right-top) - Added title
     draw_state(goal_state, 
               x_offset + main_width - GRID_PADDING - 300, 
               GRID_PADDING,
               "Goal State")
     
-    # Get current state position
     current_state_x = x_offset + main_width//2 - (CELL_SIZE * GRID_SIZE)//2
     current_state_y = GRID_PADDING + CELL_SIZE * GRID_SIZE + 100
     
-    # Draw current solving state (middle-bottom)
     draw_state(state, 
               current_state_x,
               current_state_y,
               "Current State")
-    
-    # Draw SOLVE button to the left of current state
+
     solve_button = pygame.draw.rect(screen, RED, 
                                   (current_state_x - 170,  # Left of current state
                                    current_state_y + CELL_SIZE//2,
@@ -280,32 +294,26 @@ def draw_grid(state, solution=None, step_index=0, show_menu=False, current_algor
     screen.blit(solve_text, (solve_button.centerx - solve_text.get_width()//2,
                             solve_button.centery - solve_text.get_height()//2))
     
-    # Draw solving information on the right if solution exists
     if solution:
         info_x = current_state_x + (CELL_SIZE * GRID_SIZE) + 20  # Right of current state
         
-        # Algorithm name and current solve time
         algo_text = BUTTON_FONT.render(f"Algorithm: {current_algorithm}", True, BLACK)
         screen.blit(algo_text, (info_x, current_state_y - 35))
-        
-        # Time info - get from solve_times dictionary
+
         if solve_times and current_algorithm in solve_times:
             time_text = BUTTON_FONT.render(f"Time: {solve_times[current_algorithm]:.3f}s", True, BLACK)
             screen.blit(time_text, (info_x, current_state_y))
-        
-        # Steps info
+
         steps_text = BUTTON_FONT.render(f"Steps: {len(solution)-1}", True, BLACK)
         screen.blit(steps_text, (info_x, current_state_y + 35))
-        
-        # Draw comparison of all algorithm times
+
         if solve_times:
             compare_y = current_state_y + 100
             for algo, time in solve_times.items():
                 compare_text = BUTTON_FONT.render(f"{algo}: {time:.3f}s", True, BLACK)
                 screen.blit(compare_text, (info_x, compare_y))
                 compare_y += 30
-    
-    # Draw menu
+
     mouse_pos = pygame.mouse.get_pos()
     menu_elements = draw_menu(show_menu, mouse_pos, current_algorithm)
     
@@ -313,11 +321,11 @@ def draw_grid(state, solution=None, step_index=0, show_menu=False, current_algor
     return menu_elements
 
 def draw_state(state, x, y, title):
-    # Draw title
+
     title_text = BUTTON_FONT.render(title, True, BLACK)
     screen.blit(title_text, (x, y - 30))
     
-    # Draw puzzle grid
+
     pygame.draw.rect(screen, GRAY, 
                     (x, y, CELL_SIZE * GRID_SIZE, CELL_SIZE * GRID_SIZE))
     
@@ -344,11 +352,9 @@ def draw_menu(show_menu, mouse_pos, current_algorithm):
         for i in range(3):
             pygame.draw.rect(screen, WHITE, (15, 15 + i*12, 30, 4))
         return menu_button
-    
-    # Draw menu background
+
     menu_rect = pygame.draw.rect(screen, MENU_COLOR, (0, 0, MENU_WIDTH, HEIGHT))
-    
-    # Draw close button
+
     close_button = pygame.draw.rect(screen, RED, (MENU_WIDTH - 40, 10, 30, 30))
     pygame.draw.line(screen, WHITE, (MENU_WIDTH - 35, 15), (MENU_WIDTH - 15, 35), 2)
     pygame.draw.line(screen, WHITE, (MENU_WIDTH - 15, 15), (MENU_WIDTH - 35, 35), 2)
@@ -382,7 +388,7 @@ def draw_menu(show_menu, mouse_pos, current_algorithm):
     screen.blit(ids_text, (ids_button.centerx - ids_text.get_width()//2,
                           ids_button.centery - ids_text.get_height()//2))
     
-    # UCS button (add after IDS button)
+    # UCS button
     ucs_rect = pygame.Rect(20, 310, MENU_WIDTH - 40, 50)
     ucs_color = MENU_HOVER_COLOR if current_algorithm == 'UCS' else MENU_BUTTON_COLOR
     if ucs_rect.collidepoint(mouse_pos):
@@ -402,7 +408,6 @@ def draw_menu(show_menu, mouse_pos, current_algorithm):
                             astar_button.centery - astar_text.get_height()//2))
     
     
-    # In draw_menu function, add after A* button
     # Greedy button
     greedy_rect = pygame.Rect(20, 450, MENU_WIDTH - 40, 50)
     greedy_color = MENU_HOVER_COLOR if current_algorithm == 'Greedy' else MENU_BUTTON_COLOR
@@ -413,7 +418,17 @@ def draw_menu(show_menu, mouse_pos, current_algorithm):
     screen.blit(greedy_text, (greedy_button.centerx - greedy_text.get_width()//2,
                              greedy_button.centery - greedy_text.get_height()//2))
     
-    return menu_rect, close_button, bfs_button, dfs_button, ids_button, ucs_button, astar_button, greedy_button
+    # IDA Star button
+    ida_star_rect = pygame.Rect(20, 520, MENU_WIDTH - 40, 50)
+    ida_star_color = MENU_HOVER_COLOR if current_algorithm == 'IDA*' else MENU_BUTTON_COLOR
+    if ida_star_rect.collidepoint(mouse_pos):
+        ida_star_color = MENU_HOVER_COLOR
+    ida_star_button = pygame.draw.rect(screen, ida_star_color, ida_star_rect)
+    ida_star_text = BUTTON_FONT.render("IDA*", True, WHITE)
+    screen.blit(ida_star_text, (ida_star_button.centerx - ida_star_text.get_width()//2,
+                             ida_star_button.centery - ida_star_text.get_height()//2))
+    
+    return menu_rect, close_button, bfs_button, dfs_button, ids_button, ucs_button, astar_button, greedy_button, ida_star_button
     
 def show_popup(message):
     """Show a popup message window"""
