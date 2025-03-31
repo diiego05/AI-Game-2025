@@ -291,7 +291,38 @@ def simple_hill_climbing(initial_state):
             return path
     
     return None
-
+def steepest_hill_climbing(initial_state):
+    """Steepest Hill Climbing implementation using Manhattan distance heuristic"""
+    start_time = time.time()
+    current_state = initial_state
+    path = [current_state]
+    
+    while time.time() - start_time < 30:
+        neighbors = get_neighbors(current_state)
+        if not neighbors:
+            break
+        
+        # Evaluate all neighbors and choose the one with the best (lowest) heuristic value
+        best_neighbor = None
+        best_value = manhattan_distance(current_state)
+        
+        for neighbor in neighbors:
+            h = manhattan_distance(neighbor)
+            if h < best_value:
+                best_value = h
+                best_neighbor = neighbor
+        
+        # Stop if no improvement is found
+        if best_neighbor is None:
+            break
+        
+        current_state = best_neighbor
+        path.append(current_state)
+        
+        if is_goal(current_state):
+            return path
+            
+    return None
 def draw_grid(state, solution=None, step_index=0, show_menu=False, current_algorithm='BFS', solve_times=None):
     screen.fill(WHITE)
     
@@ -488,7 +519,16 @@ def draw_menu(show_menu, mouse_pos, current_algorithm):
     screen.blit(hill_climbing_text, (hill_climbing_button.centerx - hill_climbing_text.get_width()//2,
                              hill_climbing_button.centery - hill_climbing_text.get_height()//2))
     
-    return menu_rect, close_button, bfs_button, dfs_button, ids_button, ucs_button, astar_button, greedy_button, ida_star_button, hill_climbing_button
+    steepest_rect = pygame.Rect(20, 660, MENU_WIDTH - 40, 50)
+    steepest_color = MENU_HOVER_COLOR if current_algorithm == 'Steepest Hill' else MENU_BUTTON_COLOR
+    if steepest_rect.collidepoint(mouse_pos):
+        steepest_color = MENU_HOVER_COLOR
+    steepest_button = pygame.draw.rect(screen, steepest_color, steepest_rect)
+    steepest_text = BUTTON_FONT.render("Steepest Hill", True, WHITE)
+    screen.blit(steepest_text, (steepest_button.centerx - steepest_text.get_width()//2,
+                             steepest_button.centery - steepest_text.get_height()//2))
+    
+    return menu_rect, close_button, bfs_button, dfs_button, ids_button, ucs_button, astar_button, greedy_button, ida_star_button, hill_climbing_button, steepest_button
     
 def show_popup(message):
     """Show a popup message window"""
@@ -601,7 +641,7 @@ def main():
                             auto_solve = False
                 else:
                     if isinstance(menu_elements, tuple):
-                        _, close_button, bfs_button, dfs_button, ids_button, ucs_button, astar_button, greedy_button, ida_star_button, hill_climbing_button = menu_elements
+                        _, close_button, bfs_button, dfs_button, ids_button, ucs_button, astar_button, greedy_button, ida_star_button, hill_climbing_button, steepest_button = menu_elements
                         if close_button.collidepoint(x, y):
                             show_menu = False
                         elif bfs_button.collidepoint(x, y):
@@ -628,6 +668,9 @@ def main():
                         elif hill_climbing_button.collidepoint(x, y):
                             current_algorithm = 'Hill Climbing'
                             show_menu = False
+                        elif steepest_button.collidepoint(x, y):
+                            current_algorithm = 'Steepest Hill'
+                            show_menu = False
         # Solve puzzle with selected algorithm
         if solving:
             solving = False
@@ -648,8 +691,10 @@ def main():
                     solution = ida_star(current_state)
                 elif current_algorithm == 'Greedy': 
                     solution = greedy(current_state)
-                else:
+                elif current_algorithm == 'Hill Climbing':
                     solution = simple_hill_climbing(current_state)
+                elif current_algorithm == 'Steepest Hill':
+                    solution = steepest_hill_climbing(current_state)
                 solve_duration = time.time() - solve_start
                 
                 if solution:
