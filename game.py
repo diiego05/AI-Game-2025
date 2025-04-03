@@ -8,7 +8,7 @@ import traceback
 import math
 import random
 
-# --- Khởi tạo Pygame và các hằng số (Giữ nguyên) ---
+
 pygame.init()
 MENU_WIDTH = 200
 WIDTH = 1100
@@ -43,11 +43,6 @@ pygame.display.set_caption("LamVanDi-23110191 - 8 Puzzle Solver")
 initial_state = [[2, 6, 5], [0, 8, 7], [4, 3, 1]]
 goal_state = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
 
-# --- Các hàm giải thuật (bao gồm SA) và hàm hỗ trợ (Giữ nguyên) ---
-# ... (find_empty, is_goal, get_neighbors, state_to_tuple, bfs, dfs, ids, ucs, manhattan_distance,
-#      astar, greedy, search_ida, ida_star, simple_hill_climbing, steepest_hill_climbing,
-#      random_hill_climbing, simulated_annealing) ...
-# Find empty, is_goal, get_neighbors, state_to_tuple... (không thay đổi)
 def find_empty(state):
     for i in range(GRID_SIZE):
         for j in range(GRID_SIZE):
@@ -56,7 +51,6 @@ def find_empty(state):
     return -1, -1
 
 def is_goal(state):
-    # Thêm kiểm tra type để tránh lỗi nếu state không đúng định dạng
     if not isinstance(state, list) or len(state) != GRID_SIZE:
         return False
     for i in range(GRID_SIZE):
@@ -91,7 +85,7 @@ def bfs(initial_state):
     start_time = time.time()
     queue = deque([(initial_state, [initial_state])])
     init_tuple = state_to_tuple(initial_state)
-    if init_tuple is None: return None # Handle conversion error
+    if init_tuple is None: return None 
     visited = {init_tuple}
     while queue and time.time() - start_time < 30:
         current_state, path = queue.popleft()
@@ -107,7 +101,7 @@ def dfs(initial_state, max_depth=30):
     while stack and time.time() - start_time < 30:
         current_state, path, depth = stack.pop()
         current_tuple = state_to_tuple(current_state)
-        if current_tuple is None: continue # Skip if conversion failed
+        if current_tuple is None: continue 
 
         if current_tuple in visited and visited[current_tuple] <= depth: continue
         if depth > max_depth: continue
@@ -319,7 +313,48 @@ def simulated_annealing(initial_state, initial_temp=1000, cooling_rate=0.99, min
             # If temp is zero or negative, don't accept worse moves
         temp *= cooling_rate
     return path
-
+def beam_search(initial_state, beam_width=3):
+    start_time = time.time()
+    
+    # Check if initial state is already the goal
+    if is_goal(initial_state):
+        return [initial_state]
+    
+    # Initialize the beam with the initial state
+    beam = [(initial_state, [initial_state], manhattan_distance(initial_state))]
+    
+    visited = set()
+    init_tuple = state_to_tuple(initial_state)
+    if init_tuple is None: return None
+    visited.add(init_tuple)
+    
+    while beam and time.time() - start_time < 30:
+        next_level = []
+        
+        for state, path, _ in beam:
+            for neighbor in get_neighbors(state):
+                neighbor_tuple = state_to_tuple(neighbor)
+                if neighbor_tuple is None: continue
+                
+                if neighbor_tuple not in visited:
+                    visited.add(neighbor_tuple)
+                    new_path = path + [neighbor]
+                    
+                    if is_goal(neighbor):
+                        return new_path
+                    
+                    # Add to next level with its heuristic value
+                    next_level.append((neighbor, new_path, manhattan_distance(neighbor)))
+        
+        # If next level is empty, no solution
+        if not next_level:
+            return path if is_goal(state) else None
+        
+        # Sort next level by heuristic and keep only top beam_width states
+        next_level.sort(key=lambda x: x[2])
+        beam = next_level[:beam_width]
+    
+    return None
 # --- Hàm vẽ (draw_state, show_popup, draw_menu) ---
 # ... (Giữ nguyên draw_state, show_popup, draw_menu) ...
 def draw_state(state, x, y, title):
@@ -394,7 +429,7 @@ def draw_menu(show_menu, mouse_pos, current_algorithm):
         start_y = menu_button_rect.centery - (bar_height * 3 + space * 2) // 2
         for i in range(3): pygame.draw.rect(screen, WHITE, (start_x, start_y + i * (bar_height + space), bar_width, bar_height), border_radius=2)
         return {'open_button': menu_button_rect}
-    algorithms = [('BFS', 'BFS'), ('DFS', 'DFS'), ('IDS', 'IDS'), ('UCS', 'UCS'), ('A*', 'A*'), ('Greedy', 'Greedy'), ('IDA*', 'IDA*'), ('Hill Climbing', 'Simple Hill'), ('Steepest Hill', 'Steepest Hill'), ('Stochastic Hill', 'Stochastic Hill'), ('SA', 'Simulated Annealing')]
+    algorithms = [('BFS', 'BFS'), ('DFS', 'DFS'), ('IDS', 'IDS'), ('UCS', 'UCS'), ('A*', 'A*'), ('Greedy', 'Greedy'), ('IDA*', 'IDA*'), ('Hill Climbing', 'Simple Hill'), ('Steepest Hill', 'Steepest Hill'), ('Stochastic Hill', 'Stochastic Hill'), ('SA', 'Simulated Annealing'), ('Beam Search', 'Beam Search')]
     button_height, padding, button_margin = 55, 10, 8
     total_menu_height = (len(algorithms) * (button_height + button_margin)) - button_margin + (2 * padding)
     display_height = max(total_menu_height, HEIGHT)
@@ -581,6 +616,7 @@ def main():
                 elif current_algorithm == 'Steepest Hill': found_solution_path = steepest_hill_climbing(state_to_solve)
                 elif current_algorithm == 'Stochastic Hill': found_solution_path = random_hill_climbing(state_to_solve)
                 elif current_algorithm == 'SA': found_solution_path = simulated_annealing(state_to_solve)
+                elif current_algorithm == 'Beam Search': found_solution_path = beam_search(state_to_solve, beam_width=3)
                 else: show_popup(f"Algorithm '{current_algorithm}' is not implemented.", "Error"); error_occurred = True
             except Exception as e: show_popup(f"Error during {current_algorithm} solve:\n{e}", "Solver Error"); traceback.print_exc(); error_occurred = True
 
