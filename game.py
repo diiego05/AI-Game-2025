@@ -4,16 +4,19 @@ from collections import deque
 import copy
 import time
 from queue import PriorityQueue
-# Khởi tạo pygame
-pygame.init()
+import traceback
+import math
+import random
 
-# Các hằng số
+# --- Khởi tạo Pygame và các hằng số (Giữ nguyên) ---
+pygame.init()
 MENU_WIDTH = 200
-WIDTH = 1100  # Increased to accommodate menu
-HEIGHT = 800  
+WIDTH = 1100
+HEIGHT = 800
 GRID_SIZE = 3
-CELL_SIZE = 100  
-GRID_PADDING = 50
+CELL_SIZE = 100
+GRID_PADDING = 40
+GRID_DISPLAY_WIDTH = GRID_SIZE * CELL_SIZE
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GRAY = (200, 200, 200)
@@ -21,34 +24,30 @@ BLUE = (30, 144, 255)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 FONT = pygame.font.SysFont('Arial', 60)
-BUTTON_FONT = pygame.font.SysFont('Arial', 30)
+BUTTON_FONT = pygame.font.SysFont('Arial', 24)
+INFO_FONT = pygame.font.SysFont('Arial', 18) # Giảm font info để vừa nhiều chữ hơn
+TITLE_FONT = pygame.font.SysFont('Arial', 26, bold=True)
 MENU_COLOR = (50, 50, 50)
 MENU_BUTTON_COLOR = (70, 70, 70)
 MENU_HOVER_COLOR = (90, 90, 90)
-MENU_HIDDEN = True 
+MENU_SELECTED_COLOR = pygame.Color('dodgerblue')
+MENU_HIDDEN = True
 INFO_COLOR = (50, 50, 150)
-INFO_BG = (220, 220, 220)
-POPUP_WIDTH = 400
-POPUP_HEIGHT = 200
+INFO_BG = (245, 245, 245)
+POPUP_WIDTH = 450
+POPUP_HEIGHT = 250
 
-# Tạo cửa sổ
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("LamVanDi-23110191")
+pygame.display.set_caption("LamVanDi-23110191 - 8 Puzzle Solver")
 
-# Trạng thái ban đầu và trạng thái đích
-initial_state = [
-    [2, 6, 5],
-    [0, 8, 7],
-    [4, 3, 1]
-]
+initial_state = [[2, 6, 5], [0, 8, 7], [4, 3, 1]]
+goal_state = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
 
-goal_state = [
-    [1, 2, 3],
-    [4, 5, 6],
-    [7, 8, 0]
-]
-
-# Tìm vị trí ô trống (0)
+# --- Các hàm giải thuật (bao gồm SA) và hàm hỗ trợ (Giữ nguyên) ---
+# ... (find_empty, is_goal, get_neighbors, state_to_tuple, bfs, dfs, ids, ucs, manhattan_distance,
+#      astar, greedy, search_ida, ida_star, simple_hill_climbing, steepest_hill_climbing,
+#      random_hill_climbing, simulated_annealing) ...
+# Find empty, is_goal, get_neighbors, state_to_tuple... (không thay đổi)
 def find_empty(state):
     for i in range(GRID_SIZE):
         for j in range(GRID_SIZE):
@@ -56,533 +55,459 @@ def find_empty(state):
                 return i, j
     return -1, -1
 
-# Kiểm tra trạng thái đích
 def is_goal(state):
+    # Thêm kiểm tra type để tránh lỗi nếu state không đúng định dạng
+    if not isinstance(state, list) or len(state) != GRID_SIZE:
+        return False
+    for i in range(GRID_SIZE):
+        if not isinstance(state[i], list) or len(state[i]) != GRID_SIZE:
+            return False
     return state == goal_state
 
-# Hàm sinh các trạng thái kế tiếp
+
 def get_neighbors(state):
     neighbors = []
     empty_i, empty_j = find_empty(state)
-    
     directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-    
     for di, dj in directions:
         new_i, new_j = empty_i + di, empty_j + dj
-        
         if 0 <= new_i < GRID_SIZE and 0 <= new_j < GRID_SIZE:
             new_state = copy.deepcopy(state)
             new_state[empty_i][empty_j], new_state[new_i][new_j] = new_state[new_i][new_j], new_state[empty_i][empty_j]
             neighbors.append(new_state)
-    
     return neighbors
 
 def state_to_tuple(state):
-    return tuple(tuple(row) for row in state)
+     # Thêm kiểm tra type để tránh lỗi
+    if not isinstance(state, list): return None # Hoặc raise exception
+    try:
+        return tuple(tuple(row) for row in state)
+    except TypeError:
+        print(f"Error converting state to tuple. State: {state}")
+        return None
 
-# Thuật toán BFS
+
 def bfs(initial_state):
     start_time = time.time()
-    queue = deque([(initial_state, [initial_state])])  
-    visited = {state_to_tuple(initial_state)}
-    
+    queue = deque([(initial_state, [initial_state])])
+    init_tuple = state_to_tuple(initial_state)
+    if init_tuple is None: return None # Handle conversion error
+    visited = {init_tuple}
     while queue and time.time() - start_time < 30:
         current_state, path = queue.popleft()
-        
-        if is_goal(current_state):
-            return path
-        
+        if is_goal(current_state): return path
         for neighbor in get_neighbors(current_state):
             neighbor_tuple = state_to_tuple(neighbor)
-            if neighbor_tuple not in visited:
-                visited.add(neighbor_tuple)
-                queue.append((neighbor, path + [neighbor]))
-    
+            if neighbor_tuple is not None and neighbor_tuple not in visited:
+                visited.add(neighbor_tuple); queue.append((neighbor, path + [neighbor]))
     return None
 
 def dfs(initial_state, max_depth=30):
-    start_time = time.time()
-    stack = [(initial_state, [initial_state], 0)]  
-    visited = {state_to_tuple(initial_state)}
-    
+    start_time = time.time(); stack = [(initial_state, [initial_state], 0)]; visited = {}
     while stack and time.time() - start_time < 30:
         current_state, path, depth = stack.pop()
-        
-        if is_goal(current_state):
-            return path
-            
-        if depth < max_depth:
-            neighbors = get_neighbors(current_state)
-            for neighbor in reversed(neighbors):  
-                if neighbor_tuple not in visited:
-                    visited.add(neighbor_tuple)
-                    stack.append((neighbor, path + [neighbor], depth + 1))
-    
+        current_tuple = state_to_tuple(current_state)
+        if current_tuple is None: continue # Skip if conversion failed
+
+        if current_tuple in visited and visited[current_tuple] <= depth: continue
+        if depth > max_depth: continue
+        visited[current_tuple] = depth
+        if is_goal(current_state): return path
+        neighbors = get_neighbors(current_state)
+        for neighbor in reversed(neighbors):
+             neighbor_tuple = state_to_tuple(neighbor)
+             if neighbor_tuple is not None and (neighbor_tuple not in visited or visited[neighbor_tuple] > depth + 1):
+                 stack.append((neighbor, path + [neighbor], depth + 1))
     return None
 
-def ids(initial_state, max_depth=30):
+def ids(initial_state, max_depth_limit=30):
     start_time = time.time()
-    
-    for depth_limit in range(max_depth):
-        stack = [(initial_state, [initial_state], 0)]  
-        visited = {state_to_tuple(initial_state)}
-        
+    init_tuple = state_to_tuple(initial_state)
+    if init_tuple is None: return None
+    for depth_limit in range(max_depth_limit + 1):
+        stack = [(initial_state, [initial_state], 0)]; visited_in_iteration = {init_tuple: 0}
         while stack and time.time() - start_time < 30:
             current_state, path, depth = stack.pop()
-            
-            if is_goal(current_state):
-                return path
-                
+            if is_goal(current_state): return path
             if depth < depth_limit:
                 neighbors = get_neighbors(current_state)
                 for neighbor in reversed(neighbors):
                     neighbor_tuple = state_to_tuple(neighbor)
-                    if neighbor_tuple not in visited:
-                        visited.add(neighbor_tuple)
+                    if neighbor_tuple is not None and (neighbor_tuple not in visited_in_iteration or visited_in_iteration[neighbor_tuple] > depth + 1):
+                        visited_in_iteration[neighbor_tuple] = depth + 1
                         stack.append((neighbor, path + [neighbor], depth + 1))
-        
-        # Clear visited states for next iteration
-        if time.time() - start_time >= 30:
-            break
-            
+        if time.time() - start_time >= 30: break
     return None
 
-
 def ucs(initial_state):
-    """Uniform Cost Search implementation"""
-    from queue import PriorityQueue
-    start_time = time.time()
-    frontier = PriorityQueue()
+    start_time = time.time(); frontier = PriorityQueue()
+    init_tuple = state_to_tuple(initial_state)
+    if init_tuple is None: return None
     frontier.put((0, initial_state, [initial_state]))
-    visited = {state_to_tuple(initial_state)}
-    
+    visited = {init_tuple: 0}
     while not frontier.empty() and time.time() - start_time < 30:
         cost, current_state, path = frontier.get()
-        
-        if is_goal(current_state):
-            return path
-        
+        current_tuple = state_to_tuple(current_state)
+        if current_tuple is None: continue
+
+        if is_goal(current_state): return path
+        # Check visited before accessing cost comparison
+        if current_tuple in visited and cost > visited[current_tuple]: continue
         for neighbor in get_neighbors(current_state):
-            neighbor_tuple = state_to_tuple(neighbor)
-            if neighbor_tuple not in visited:
-                visited.add(neighbor_tuple)
-                frontier.put((cost + 1, neighbor, path + [neighbor]))
-    
+            neighbor_tuple = state_to_tuple(neighbor);
+            if neighbor_tuple is None: continue
+            new_cost = cost + 1
+            if neighbor_tuple not in visited or new_cost < visited[neighbor_tuple]:
+                visited[neighbor_tuple] = new_cost; frontier.put((new_cost, neighbor, path + [neighbor]))
     return None
 
 def manhattan_distance(state):
-    """Calculate Manhattan distance heuristic"""
-    distance = 0
+    distance = 0; goal_pos = {}
+    for r in range(GRID_SIZE):
+        for c in range(GRID_SIZE): val = goal_state[r][c];
+        if val != 0: goal_pos[val] = (r, c)
     for i in range(GRID_SIZE):
-        for j in range(GRID_SIZE):
-            if state[i][j] != 0: 
-                for gi in range(GRID_SIZE):
-                    for gj in range(GRID_SIZE):
-                        if goal_state[gi][gj] == state[i][j]:
-                            distance += abs(gi - i) + abs(gj - j)
-                            break
+        for j in range(GRID_SIZE): tile = state[i][j]
+        if tile != 0:
+            if tile in goal_pos: goal_r, goal_c = goal_pos[tile]; distance += abs(goal_r - i) + abs(goal_c - j)
     return distance
 
-
 def astar(initial_state):
-    """A* Search implementation"""
-    start_time = time.time()
-    
-    frontier = PriorityQueue()
-    frontier.put((manhattan_distance(initial_state), 0, initial_state, [initial_state]))
-    visited = {state_to_tuple(initial_state)}
-    
+    start_time = time.time(); frontier = PriorityQueue()
+    g_init=0; h_init=manhattan_distance(initial_state); f_init = g_init + h_init
+    init_tuple = state_to_tuple(initial_state)
+    if init_tuple is None: return None
+    frontier.put((f_init, g_init, initial_state, [initial_state]))
+    visited = {init_tuple: g_init}
     while not frontier.empty() and time.time() - start_time < 30:
         f_score, g_score, current_state, path = frontier.get()
-        
-        if is_goal(current_state):
-            return path
-        
+        current_tuple = state_to_tuple(current_state)
+        if current_tuple is None: continue
+
+        if is_goal(current_state): return path
+        # Check visited before accessing cost comparison
+        if current_tuple in visited and g_score > visited[current_tuple]: continue
         for neighbor in get_neighbors(current_state):
-            neighbor_tuple = state_to_tuple(neighbor)
-            if neighbor_tuple not in visited:
-                visited.add(neighbor_tuple)
-                g = g_score + 1  
-                h = manhattan_distance(neighbor)
-                f = g + h
-                frontier.put((f, g, neighbor, path + [neighbor]))
-    
+            neighbor_tuple = state_to_tuple(neighbor);
+            if neighbor_tuple is None: continue
+            tentative_g = g_score + 1
+            if neighbor_tuple not in visited or tentative_g < visited[neighbor_tuple]:
+                visited[neighbor_tuple] = tentative_g; h = manhattan_distance(neighbor); f = tentative_g + h
+                frontier.put((f, tentative_g, neighbor, path + [neighbor]))
     return None
 
 def greedy(initial_state):
-    """Greedy Search implementation using Manhattan distance heuristic"""
-    start_time = time.time()
-    frontier = PriorityQueue()
+    start_time = time.time(); frontier = PriorityQueue()
+    init_tuple = state_to_tuple(initial_state)
+    if init_tuple is None: return None
     frontier.put((manhattan_distance(initial_state), initial_state, [initial_state]))
-    visited = {state_to_tuple(initial_state)}
+    visited = {init_tuple}
     while not frontier.empty() and time.time() - start_time < 30:
-        _, current_state, path = frontier.get()
-        if is_goal(current_state):
-            return path
+        h_val, current_state, path = frontier.get()
+        if is_goal(current_state): return path
         for neighbor in get_neighbors(current_state):
             neighbor_tuple = state_to_tuple(neighbor)
-            if neighbor_tuple not in visited:
-                visited.add(neighbor_tuple)
-                h = manhattan_distance(neighbor)
-                frontier.put((h, neighbor, path + [neighbor]))
-    
+            if neighbor_tuple is not None and neighbor_tuple not in visited:
+                visited.add(neighbor_tuple); h = manhattan_distance(neighbor); frontier.put((h, neighbor, path + [neighbor]))
     return None
-def ida_star(initial_state):
-    """IDA* Search implementation"""
-    def search(path, g, threshold):
-        current_state = path[-1]
-        f = g + manhattan_distance(current_state)
-        if f > threshold:
-            return f, None
-        if is_goal(current_state):
-            return f, path
-        min_threshold = float('inf')
-        for neighbor in get_neighbors(current_state):
-            if neighbor not in path:
-                path.append(neighbor)
-                t, result = search(path, g + 1, threshold)
-                if result is not None:
-                    return t, result
-                if t < min_threshold:
-                    min_threshold = t
-                path.pop()
-        return min_threshold, None
 
-    threshold = manhattan_distance(initial_state)
-    path = [initial_state]
-    while True:
-        t, result = search(path, 0, threshold)
-        if result is not None:
-            return result
-        if t == float('inf'):
-            return None
-        threshold = t
-def simple_hill_climbing(initial_state):
-    """Simple Hill Climbing implementation using Manhattan distance heuristic"""
-    start_time = time.time()
-    current_state = initial_state
-    path = [current_state]
-    visited = {state_to_tuple(current_state)}
-    
-    while time.time() - start_time < 30:
-        neighbors = get_neighbors(current_state)
-        if not neighbors:
-            break
-        
-        best_neighbor = None
-        best_heuristic = float('inf')
-        
-        for neighbor in neighbors:
-            neighbor_tuple = state_to_tuple(neighbor)
-            if neighbor_tuple not in visited:
-                h = manhattan_distance(neighbor)
-                if h < best_heuristic:
-                    best_heuristic = h
-                    best_neighbor = neighbor
-        
-        if best_neighbor is None or best_heuristic >= manhattan_distance(current_state):
-            break
-        
-        current_state = best_neighbor
-        path.append(current_state)
-        visited.add(state_to_tuple(current_state))
-        
-        if is_goal(current_state):
-            return path
-    
+def search_ida(path, g, threshold, visited_in_iteration, start_time):
+    current_state = path[-1]; h = manhattan_distance(current_state); f = g + h
+    if f > threshold: return None, f
+    if is_goal(current_state): return path, threshold
+    if time.time() - start_time >= 60: return "Timeout", float('inf')
+    min_new_threshold = float('inf')
+    for neighbor in get_neighbors(current_state):
+        neighbor_tuple = state_to_tuple(neighbor);
+        if neighbor_tuple is None: continue # Skip bad neighbors
+        new_g = g + 1
+        if neighbor_tuple not in visited_in_iteration or new_g < visited_in_iteration[neighbor_tuple]:
+            visited_in_iteration[neighbor_tuple] = new_g
+            path.append(neighbor)
+            result, recursive_threshold = search_ida(path, new_g, threshold, visited_in_iteration, start_time)
+            path.pop()
+            if result == "Timeout": return "Timeout", float('inf')
+            if result is not None: return result, threshold
+            min_new_threshold = min(min_new_threshold, recursive_threshold)
+    return None, min_new_threshold
+
+def ida_star(initial_state):
+    start_time = time.time();
+    init_tuple = state_to_tuple(initial_state)
+    if init_tuple is None: return None
+    threshold = manhattan_distance(initial_state); path = [initial_state]
+    while time.time() - start_time < 60:
+        visited_in_iteration = {init_tuple: 0}
+        result, new_threshold = search_ida(path, 0, threshold, visited_in_iteration, start_time)
+        if result == "Timeout": return None
+        if result is not None: return result
+        if new_threshold == float('inf'): return None
+        threshold = new_threshold
     return None
-def steepest_hill_climbing(initial_state):
-    """Steepest Hill Climbing implementation using Manhattan distance heuristic"""
-    start_time = time.time()
-    current_state = initial_state
-    path = [current_state]
-    
+
+def simple_hill_climbing(initial_state):
+    start_time = time.time(); current_state = initial_state; path = [current_state]
+    current_h = manhattan_distance(current_state)
     while time.time() - start_time < 30:
-        neighbors = get_neighbors(current_state)
-        if not neighbors:
-            break
-        
-        # Evaluate all neighbors and choose the one with the best (lowest) heuristic value
-        best_neighbor = None
-        best_value = manhattan_distance(current_state)
-        
+        if is_goal(current_state): return path
+        neighbors = get_neighbors(current_state); best_neighbor = None; found_better = False
         for neighbor in neighbors:
             h = manhattan_distance(neighbor)
-            if h < best_value:
-                best_value = h
-                best_neighbor = neighbor
-        
-        # Stop if no improvement is found
-        if best_neighbor is None:
-            break
-        
-        current_state = best_neighbor
-        path.append(current_state)
-        
-        if is_goal(current_state):
-            return path
-            
-    return None
-def draw_grid(state, solution=None, step_index=0, show_menu=False, current_algorithm='BFS', solve_times=None):
-    screen.fill(WHITE)
-    
-    # Calculate x offset based on menu state
-    x_offset = MENU_WIDTH if show_menu else 0
-    main_width = WIDTH - x_offset
-    
-    # Draw initial state (left-top) - Added title
-    draw_state(initial_state, 
-              x_offset + GRID_PADDING + 20, 
-              GRID_PADDING,
-              "Initial State")
-    
-    # Draw goal state (right-top) - Added title
-    draw_state(goal_state, 
-              x_offset + main_width - GRID_PADDING - 300, 
-              GRID_PADDING,
-              "Goal State")
-    
-    # Get current state position
-    current_state_x = x_offset + main_width//2 - (CELL_SIZE * GRID_SIZE)//2
-    current_state_y = GRID_PADDING + CELL_SIZE * GRID_SIZE + 100
-    
-    # Draw current solving state (middle-bottom)
-    draw_state(state, 
-              current_state_x,
-              current_state_y,
-              "Current State")
-    
-    # Draw SOLVE button to the left of current state
-    solve_button = pygame.draw.rect(screen, RED, 
-                                  (current_state_x - 170,  # Left of current state
-                                   current_state_y + CELL_SIZE//2,
-                                   150, 50))
-    solve_text = BUTTON_FONT.render("SOLVE", True, WHITE)
-    screen.blit(solve_text, (solve_button.centerx - solve_text.get_width()//2,
-                            solve_button.centery - solve_text.get_height()//2))
-    
-    reset_button = pygame.draw.rect(screen, BLUE, 
-                                  (current_state_x - 170,  # Same x as SOLVE button
-                                   current_state_y + CELL_SIZE//2 + 60,  # 60 pixels below SOLVE
-                                   150, 50))
-    reset_text = BUTTON_FONT.render("RESET", True, WHITE)
-    screen.blit(reset_text, (reset_button.centerx - reset_text.get_width()//2,
-                            reset_button.centery - reset_text.get_height()//2))
-    
-    # Draw solving information on the right if solution exists
-    if solution:
-        info_x = current_state_x + (CELL_SIZE * GRID_SIZE) + 20  # Right of current state
-        
+            if h < current_h: best_neighbor = neighbor; current_h = h; found_better = True; break
+        if not found_better: return path
+        current_state = best_neighbor; path.append(current_state)
+    return path
 
-        
-        # Time info - get from solve_times dictionary
-        if solve_times and current_algorithm in solve_times:
-            time_text = BUTTON_FONT.render(f"Time: {solve_times[current_algorithm]:.3f}s", True, BLACK)
-            screen.blit(time_text, (info_x, current_state_y))
-        
-        # Steps info
-        steps_text = BUTTON_FONT.render(f"Steps: {len(solution)-1}", True, BLACK)
-        screen.blit(steps_text, (info_x, current_state_y + 35))
-        
-        
-        # Draw comparison of all algorithm times
-        if solve_times:
-            compare_y = current_state_y + 100
-            for algo, time in solve_times.items():
-                compare_text = BUTTON_FONT.render(f"{algo}: {time:.3f}s", True, BLACK)
-                screen.blit(compare_text, (info_x, compare_y))
-                compare_y += 30
-    
-    # Draw menu
-    mouse_pos = pygame.mouse.get_pos()
-    menu_elements = draw_menu(show_menu, mouse_pos, current_algorithm)
-    
-    pygame.display.flip()
-    return menu_elements
+def steepest_hill_climbing(initial_state):
+    start_time = time.time(); current_state = initial_state; path = [current_state]
+    current_h = manhattan_distance(current_state)
+    while time.time() - start_time < 30:
+        if is_goal(current_state): return path
+        neighbors = get_neighbors(current_state); best_h = current_h; candidates = []
+        for neighbor in neighbors:
+            h = manhattan_distance(neighbor)
+            if h < best_h: candidates = [(h, neighbor)]; best_h = h
+            elif h == best_h and candidates: candidates.append((h, neighbor))
+        if not candidates: return path
+        # Check if chosen candidate is None before accessing index
+        if candidates:
+             chosen_h, chosen_neighbor = candidates[0]
+             current_state = chosen_neighbor; current_h = chosen_h; path.append(current_state)
+        else: # Should theoretically not happen if candidates is non-empty, but safe check
+             return path
 
+    return path
+
+
+def random_hill_climbing(initial_state):
+    start_time = time.time(); current_state = initial_state; path = [current_state]
+    current_h = manhattan_distance(current_state); max_iter_no_improve = 500; iter_no_improve = 0
+    while time.time() - start_time < 30:
+        if is_goal(current_state): return path
+        neighbors = get_neighbors(current_state);
+        if not neighbors: break
+        random_neighbor = random.choice(neighbors); neighbor_h = manhattan_distance(random_neighbor)
+        if neighbor_h <= current_h:
+            if neighbor_h < current_h: iter_no_improve = 0
+            else: iter_no_improve += 1
+            current_state = random_neighbor; current_h = neighbor_h; path.append(current_state)
+        else: iter_no_improve += 1
+        if iter_no_improve >= max_iter_no_improve: return path
+    return path
+
+def simulated_annealing(initial_state, initial_temp=1000, cooling_rate=0.99, min_temp=0.1, time_limit=30):
+    start_time = time.time()
+    current_state = initial_state
+    current_h = manhattan_distance(current_state)
+    path = [current_state]
+    temp = initial_temp
+    while temp > min_temp and time.time() - start_time < time_limit:
+        if is_goal(current_state): return path
+        neighbors = get_neighbors(current_state)
+        if not neighbors: break
+        next_state = random.choice(neighbors)
+        next_h = manhattan_distance(next_state)
+        delta_h = next_h - current_h
+        if delta_h < 0:
+            current_state = next_state; current_h = next_h; path.append(current_state)
+        else:
+            # Check temp is positive before dividing
+            if temp > 0:
+                 acceptance_prob = math.exp(-delta_h / temp)
+                 if random.random() < acceptance_prob:
+                     current_state = next_state; current_h = next_h; path.append(current_state)
+            # If temp is zero or negative, don't accept worse moves
+        temp *= cooling_rate
+    return path
+
+# --- Hàm vẽ (draw_state, show_popup, draw_menu) ---
+# ... (Giữ nguyên draw_state, show_popup, draw_menu) ...
 def draw_state(state, x, y, title):
-    # Draw title
-    title_text = BUTTON_FONT.render(title, True, BLACK)
-    screen.blit(title_text, (x, y - 30))
-    
-    # Draw puzzle grid
-    pygame.draw.rect(screen, GRAY, 
-                    (x, y, CELL_SIZE * GRID_SIZE, CELL_SIZE * GRID_SIZE))
-    
+    title_font = BUTTON_FONT
+    title_text = title_font.render(title, True, BLACK)
+    title_x = x + (GRID_DISPLAY_WIDTH // 2 - title_text.get_width() // 2)
+    title_y = y - title_text.get_height() - 5
+    screen.blit(title_text, (title_x, title_y))
+    pygame.draw.rect(screen, BLACK, (x - 1, y - 1, GRID_DISPLAY_WIDTH + 2, GRID_DISPLAY_WIDTH + 2), 2)
     for i in range(GRID_SIZE):
         for j in range(GRID_SIZE):
+            cell_x = x + j * CELL_SIZE; cell_y = y + i * CELL_SIZE
+            cell_rect = pygame.Rect(cell_x, cell_y, CELL_SIZE, CELL_SIZE)
             if state[i][j] != 0:
-                color = BLUE
-                if state[i][j] == goal_state[i][j]:
-                    color = GREEN
-                    
-                pygame.draw.rect(screen, color, 
-                               (x + j * CELL_SIZE + 5, 
-                                y + i * CELL_SIZE + 5, 
-                                CELL_SIZE - 10, CELL_SIZE - 10))
-                
+                is_correct_pos = False
+                # Add check for goal_state structure before accessing
+                if isinstance(goal_state, list) and len(goal_state) > i and isinstance(goal_state[i], list) and len(goal_state[i]) > j:
+                    is_correct_pos = (state[i][j] == goal_state[i][j])
+
+                color = GREEN if is_correct_pos else BLUE
+                pygame.draw.rect(screen, color, cell_rect.inflate(-6, -6), border_radius=8)
                 number = FONT.render(str(state[i][j]), True, WHITE)
-                screen.blit(number, 
-                          (x + j * CELL_SIZE + CELL_SIZE//2 - number.get_width()//2,
-                           y + i * CELL_SIZE + CELL_SIZE//2 - number.get_height()//2))
+                screen.blit(number, number.get_rect(center=cell_rect.center))
+            else: pygame.draw.rect(screen, GRAY, cell_rect.inflate(-6, -6), border_radius=8)
+            pygame.draw.rect(screen, BLACK, cell_rect, 1)
 
-def draw_menu(show_menu, mouse_pos, current_algorithm):
-    if not show_menu:
-        menu_button = pygame.draw.rect(screen, MENU_COLOR, (10, 10, 40, 40))
-        for i in range(3):
-            pygame.draw.rect(screen, WHITE, (15, 15 + i*12, 30, 4))
-        return menu_button
-    
-    # Draw menu background
-    menu_rect = pygame.draw.rect(screen, MENU_COLOR, (0, 0, MENU_WIDTH, HEIGHT))
-    
-    # Draw close button
-    close_button = pygame.draw.rect(screen, RED, (MENU_WIDTH - 40, 10, 30, 30))
-    pygame.draw.line(screen, WHITE, (MENU_WIDTH - 35, 15), (MENU_WIDTH - 15, 35), 2)
-    pygame.draw.line(screen, WHITE, (MENU_WIDTH - 15, 15), (MENU_WIDTH - 35, 35), 2)
-    
-    # BFS button
-    bfs_rect = pygame.Rect(20, 100, MENU_WIDTH - 40, 50)
-    bfs_color = MENU_HOVER_COLOR if current_algorithm == 'BFS' else MENU_BUTTON_COLOR
-    if bfs_rect.collidepoint(mouse_pos):
-        bfs_color = MENU_HOVER_COLOR
-    bfs_button = pygame.draw.rect(screen, bfs_color, bfs_rect)
-    bfs_text = BUTTON_FONT.render("BFS", True, WHITE)
-    screen.blit(bfs_text, (bfs_button.centerx - bfs_text.get_width()//2,
-                          bfs_button.centery - bfs_text.get_height()//2))
-    
-    # DFS button
-    dfs_rect = pygame.Rect(20, 170, MENU_WIDTH - 40, 50)
-    dfs_color = MENU_HOVER_COLOR if current_algorithm == 'DFS' else MENU_BUTTON_COLOR
-    if dfs_rect.collidepoint(mouse_pos):
-        dfs_color = MENU_HOVER_COLOR
-    dfs_button = pygame.draw.rect(screen, dfs_color, dfs_rect)
-    dfs_text = BUTTON_FONT.render("DFS", True, WHITE)
-    screen.blit(dfs_text, (dfs_button.centerx - dfs_text.get_width()//2,
-                          dfs_button.centery - dfs_text.get_height()//2))
-    # IDS button
-    ids_rect = pygame.Rect(20, 240, MENU_WIDTH - 40, 50)
-    ids_color = MENU_HOVER_COLOR if current_algorithm == 'IDS' else MENU_BUTTON_COLOR
-    if ids_rect.collidepoint(mouse_pos):
-        ids_color = MENU_HOVER_COLOR
-    ids_button = pygame.draw.rect(screen, ids_color, ids_rect)
-    ids_text = BUTTON_FONT.render("IDS", True, WHITE)
-    screen.blit(ids_text, (ids_button.centerx - ids_text.get_width()//2,
-                          ids_button.centery - ids_text.get_height()//2))
-    
-    # UCS button (add after IDS button)
-    ucs_rect = pygame.Rect(20, 310, MENU_WIDTH - 40, 50)
-    ucs_color = MENU_HOVER_COLOR if current_algorithm == 'UCS' else MENU_BUTTON_COLOR
-    if ucs_rect.collidepoint(mouse_pos):
-        ucs_color = MENU_HOVER_COLOR
-    ucs_button = pygame.draw.rect(screen, ucs_color, ucs_rect)
-    ucs_text = BUTTON_FONT.render("UCS", True, WHITE)
-    screen.blit(ucs_text, (ucs_button.centerx - ucs_text.get_width()//2,
-                          ucs_button.centery - ucs_text.get_height()//2))
-    # A* button
-    astar_rect = pygame.Rect(20, 380, MENU_WIDTH - 40, 50)
-    astar_color = MENU_HOVER_COLOR if current_algorithm == 'A*' else MENU_BUTTON_COLOR
-    if astar_rect.collidepoint(mouse_pos):
-        astar_color = MENU_HOVER_COLOR
-    astar_button = pygame.draw.rect(screen, astar_color, astar_rect)
-    astar_text = BUTTON_FONT.render("A*", True, WHITE)
-    screen.blit(astar_text, (astar_button.centerx - astar_text.get_width()//2,
-                            astar_button.centery - astar_text.get_height()//2))
-    
-    
-    # Greedy button
-    greedy_rect = pygame.Rect(20, 450, MENU_WIDTH - 40, 50)
-    greedy_color = MENU_HOVER_COLOR if current_algorithm == 'Greedy' else MENU_BUTTON_COLOR
-    if greedy_rect.collidepoint(mouse_pos):
-        greedy_color = MENU_HOVER_COLOR
-    greedy_button = pygame.draw.rect(screen, greedy_color, greedy_rect)
-    greedy_text = BUTTON_FONT.render("Greedy", True, WHITE)
-    screen.blit(greedy_text, (greedy_button.centerx - greedy_text.get_width()//2,
-                             greedy_button.centery - greedy_text.get_height()//2))
-
-    #IDA star button
-    ida_star_rect = pygame.Rect(20, 520, MENU_WIDTH - 40, 50)
-    ida_star_color = MENU_HOVER_COLOR if current_algorithm == 'IDA*' else MENU_BUTTON_COLOR
-    if ida_star_rect.collidepoint(mouse_pos):
-        ida_star_color = MENU_HOVER_COLOR
-    ida_star_button = pygame.draw.rect(screen, ida_star_color, ida_star_rect)
-    ida_star_text = BUTTON_FONT.render("IDA*", True, WHITE)
-    screen.blit(ida_star_text, (ida_star_button.centerx - ida_star_text.get_width()//2,
-                             ida_star_button.centery - ida_star_text.get_height()//2))
-    
-    hill_climbing_rect = pygame.Rect(20, 590, MENU_WIDTH - 40, 50)
-    hill_climbing_color = MENU_HOVER_COLOR if current_algorithm == 'Hill Climbing' else MENU_BUTTON_COLOR
-    if hill_climbing_rect.collidepoint(mouse_pos):
-        hill_climbing_color = MENU_HOVER_COLOR
-    hill_climbing_button = pygame.draw.rect(screen, hill_climbing_color, hill_climbing_rect)
-    hill_climbing_text = BUTTON_FONT.render("Hill Climbing", True, WHITE)
-    screen.blit(hill_climbing_text, (hill_climbing_button.centerx - hill_climbing_text.get_width()//2,
-                             hill_climbing_button.centery - hill_climbing_text.get_height()//2))
-    
-    steepest_rect = pygame.Rect(20, 660, MENU_WIDTH - 40, 50)
-    steepest_color = MENU_HOVER_COLOR if current_algorithm == 'Steepest Hill' else MENU_BUTTON_COLOR
-    if steepest_rect.collidepoint(mouse_pos):
-        steepest_color = MENU_HOVER_COLOR
-    steepest_button = pygame.draw.rect(screen, steepest_color, steepest_rect)
-    steepest_text = BUTTON_FONT.render("Steepest Hill", True, WHITE)
-    screen.blit(steepest_text, (steepest_button.centerx - steepest_text.get_width()//2,
-                             steepest_button.centery - steepest_text.get_height()//2))
-    
-    return menu_rect, close_button, bfs_button, dfs_button, ids_button, ucs_button, astar_button, greedy_button, ida_star_button, hill_climbing_button, steepest_button
-    
-def show_popup(message):
-    """Show a popup message window"""
-    popup_surface = pygame.Surface((POPUP_WIDTH, POPUP_HEIGHT))
-    popup_surface.fill(INFO_BG)
-    pygame.draw.rect(popup_surface, INFO_COLOR, popup_surface.get_rect(), 3)
-    
-    # Split message into lines if too long
-    words = message.split()
-    lines = []
-    line = []
+def show_popup(message, title="Info"):
+    popup_surface = pygame.Surface((POPUP_WIDTH, POPUP_HEIGHT)); popup_surface.fill(INFO_BG)
+    border_rect = popup_surface.get_rect(); pygame.draw.rect(popup_surface, INFO_COLOR, border_rect, 4, border_radius=10)
+    title_font = pygame.font.SysFont('Arial', 28, bold=True); title_surf = title_font.render(title, True, INFO_COLOR)
+    title_rect = title_surf.get_rect(center=(POPUP_WIDTH // 2, 30)); popup_surface.blit(title_surf, title_rect)
+    words = message.split(' '); lines = []; current_line = ""; text_width_limit = POPUP_WIDTH - 50
     for word in words:
-        line.append(word)
-        if len(' '.join(line)) > POPUP_WIDTH - 40:
-            lines.append(' '.join(line[:-1]))
-            line = [word]
-    if line:
-        lines.append(' '.join(line))
-    
-    # Render each line
-    y = 30
-    for line in lines:
-        text = BUTTON_FONT.render(line, True, BLACK)
-        text_rect = text.get_rect(center=(POPUP_WIDTH//2, y))
-        popup_surface.blit(text, text_rect)
-        y += 40
-    
-    # OK button
-    ok_button = pygame.draw.rect(popup_surface, INFO_COLOR, 
-                               (POPUP_WIDTH//2 - 40, POPUP_HEIGHT - 50, 80, 35))
-    ok_text = BUTTON_FONT.render("OK", True, WHITE)
-    ok_rect = ok_text.get_rect(center=ok_button.center)
-    popup_surface.blit(ok_text, ok_rect)
-    
-    # Show popup and wait for response
-    popup_rect = popup_surface.get_rect(center=(WIDTH//2, HEIGHT//2))
-    screen.blit(popup_surface, popup_rect)
-    pygame.display.flip()
-    
-    waiting = True
+        test_line = current_line + (" " if current_line else "") + word
+        # Use INFO_FONT which should be initialized
+        line_width = INFO_FONT.size(test_line)[0] if INFO_FONT else 0
+
+        if line_width <= text_width_limit: current_line = test_line
+        else: lines.append(current_line); current_line = word
+    lines.append(current_line)
+    line_height = INFO_FONT.get_linesize() if INFO_FONT else 20 # Default line height
+    start_y = title_rect.bottom + 20
+    for i, line in enumerate(lines):
+         if INFO_FONT: # Check if font exists
+             text_surf = INFO_FONT.render(line, True, BLACK)
+             text_rect = text_surf.get_rect(center=(POPUP_WIDTH // 2, start_y + i * line_height))
+             popup_surface.blit(text_surf, text_rect)
+    ok_button_rect = pygame.Rect(POPUP_WIDTH // 2 - 60, POPUP_HEIGHT - 65, 120, 40)
+    pygame.draw.rect(popup_surface, INFO_COLOR, ok_button_rect, border_radius=8)
+    # Use BUTTON_FONT for OK button text
+    ok_text_surf = BUTTON_FONT.render("OK", True, WHITE) if BUTTON_FONT else None
+    if ok_text_surf:
+         ok_text_rect = ok_text_surf.get_rect(center=ok_button_rect.center); popup_surface.blit(ok_text_surf, ok_text_rect)
+    popup_rect = popup_surface.get_rect(center=(WIDTH // 2, HEIGHT // 2)); screen.blit(popup_surface, popup_rect)
+    pygame.display.flip(); waiting = True
     while waiting:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                x, y = pygame.mouse.get_pos()
-                button_x = popup_rect.x + POPUP_WIDTH//2 - 40
-                button_y = popup_rect.y + POPUP_HEIGHT - 50
-                if (button_x <= x <= button_x + 80 and 
-                    button_y <= y <= button_y + 35):
-                    waiting = False
+            if event.type == pygame.QUIT: pygame.quit(); sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mouse_x, mouse_y = event.pos
+                if ok_button_rect.collidepoint(mouse_x - popup_rect.left, mouse_y - popup_rect.top): waiting = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN or event.key == pygame.K_ESCAPE: waiting = False
+        pygame.time.delay(20)
 
+scroll_y = 0; menu_surface = None; total_menu_height = 0
+def draw_menu(show_menu, mouse_pos, current_algorithm):
+    global scroll_y, menu_surface, total_menu_height
+    if not show_menu:
+        menu_button_rect = pygame.Rect(10, 10, 50, 40); pygame.draw.rect(screen, MENU_COLOR, menu_button_rect, border_radius=5)
+        bar_width, bar_height, space = 30, 4, 7; start_x = menu_button_rect.centerx - bar_width // 2
+        start_y = menu_button_rect.centery - (bar_height * 3 + space * 2) // 2
+        for i in range(3): pygame.draw.rect(screen, WHITE, (start_x, start_y + i * (bar_height + space), bar_width, bar_height), border_radius=2)
+        return {'open_button': menu_button_rect}
+    algorithms = [('BFS', 'BFS'), ('DFS', 'DFS'), ('IDS', 'IDS'), ('UCS', 'UCS'), ('A*', 'A*'), ('Greedy', 'Greedy'), ('IDA*', 'IDA*'), ('Hill Climbing', 'Simple Hill'), ('Steepest Hill', 'Steepest Hill'), ('Stochastic Hill', 'Stochastic Hill'), ('SA', 'Simulated Annealing')]
+    button_height, padding, button_margin = 55, 10, 8
+    total_menu_height = (len(algorithms) * (button_height + button_margin)) - button_margin + (2 * padding)
+    display_height = max(total_menu_height, HEIGHT)
+    if menu_surface is None or menu_surface.get_height() != display_height: menu_surface = pygame.Surface((MENU_WIDTH, display_height))
+    menu_surface.fill(MENU_COLOR); buttons_dict = {}; y_position = padding
+    mouse_x_rel, mouse_y_rel = mouse_pos[0], mouse_pos[1] + scroll_y
+    for algo_id, algo_name in algorithms:
+        button_rect_local = pygame.Rect(padding, y_position, MENU_WIDTH - 2 * padding, button_height)
+        is_hover = button_rect_local.collidepoint(mouse_x_rel, mouse_y_rel); is_selected = (current_algorithm == algo_id)
+        button_color = MENU_SELECTED_COLOR if is_selected else (MENU_HOVER_COLOR if is_hover else MENU_BUTTON_COLOR)
+        pygame.draw.rect(menu_surface, button_color, button_rect_local, border_radius=5)
+        text = BUTTON_FONT.render(algo_name, True, WHITE); menu_surface.blit(text, text.get_rect(center=button_rect_local.center))
+        buttons_dict[algo_id] = button_rect_local; y_position += button_height + button_margin
+    visible_menu_area = pygame.Rect(0, scroll_y, MENU_WIDTH, HEIGHT); screen.blit(menu_surface, (0, 0), visible_menu_area)
+    close_button_rect = pygame.Rect(MENU_WIDTH - 40, 10, 30, 30); pygame.draw.rect(screen, RED, close_button_rect, border_radius=5)
+    cx, cy = close_button_rect.center; pygame.draw.line(screen, WHITE, (cx - 7, cy - 7), (cx + 7, cy + 7), 3); pygame.draw.line(screen, WHITE, (cx - 7, cy + 7), (cx + 7, cy - 7), 3)
+    return {'close_button': close_button_rect, 'buttons': buttons_dict, 'menu_area': pygame.Rect(0, 0, MENU_WIDTH, HEIGHT)}
+
+# --- Hàm Vẽ Giao Diện Chính (Cập nhật hiển thị Comparison) ---
+def draw_grid_and_ui(state, show_menu, current_algorithm, solve_times, last_solved_info):
+    """Vẽ giao diện, hiển thị 'Goal not found' trong Comparison nếu cần."""
+    screen.fill(WHITE)
+    mouse_pos = pygame.mouse.get_pos()
+    main_area_x = MENU_WIDTH if show_menu else 0
+    main_area_width = WIDTH - main_area_x
+    center_x_main = main_area_x + main_area_width // 2
+    top_row_y = GRID_PADDING + 40
+    grid_spacing_top = GRID_PADDING * 1.5
+    total_width_top = 2 * GRID_DISPLAY_WIDTH + grid_spacing_top
+    start_x_top = center_x_main - total_width_top // 2
+    initial_x = start_x_top
+    goal_x = start_x_top + GRID_DISPLAY_WIDTH + grid_spacing_top
+    bottom_row_y = top_row_y + GRID_DISPLAY_WIDTH + GRID_PADDING + 60
+    button_width, button_height = 130, 45
+    button_x = main_area_x + GRID_PADDING
+    button_mid_y = bottom_row_y + GRID_DISPLAY_WIDTH // 2
+    solve_button_y = button_mid_y - button_height - 8
+    reset_button_y = button_mid_y + 8
+    solve_button_rect = pygame.Rect(button_x, solve_button_y, button_width, button_height)
+    reset_button_rect = pygame.Rect(button_x, reset_button_y, button_width, button_height)
+    current_state_x = button_x + button_width + GRID_PADDING * 1.5
+    current_state_y = bottom_row_y
+    info_area_x = current_state_x + GRID_DISPLAY_WIDTH + GRID_PADDING * 1.5
+    info_area_y = bottom_row_y
+    info_area_width = max(150, main_area_x + main_area_width - info_area_x - GRID_PADDING)
+    info_area_height = GRID_DISPLAY_WIDTH
+    info_area_rect = pygame.Rect(info_area_x, info_area_y, info_area_width, info_area_height)
+
+    # Vẽ Initial, Goal, Buttons, Current State (như cũ)
+    draw_state(initial_state, initial_x, top_row_y, "Initial State")
+    draw_state(goal_state, goal_x, top_row_y, "Goal State")
+    pygame.draw.rect(screen, RED, solve_button_rect, border_radius=5)
+    solve_text = BUTTON_FONT.render("SOLVE", True, WHITE)
+    screen.blit(solve_text, solve_text.get_rect(center=solve_button_rect.center))
+    pygame.draw.rect(screen, BLUE, reset_button_rect, border_radius=5)
+    reset_text = BUTTON_FONT.render("RESET", True, WHITE)
+    screen.blit(reset_text, reset_text.get_rect(center=reset_button_rect.center))
+    draw_state(state, current_state_x, current_state_y, f"Current ({current_algorithm})")
+
+    # Vẽ Khu vực Thông tin (Comparison)
+    pygame.draw.rect(screen, INFO_BG, info_area_rect, border_radius=8)
+    pygame.draw.rect(screen, GRAY, info_area_rect, 2, border_radius=8)
+    info_pad_x = 15; info_pad_y = 10; line_height = INFO_FONT.get_linesize() + 4 # Tăng line_height chút
+    current_info_y = info_area_y + info_pad_y
+    compare_title_surf = TITLE_FONT.render("Comparison", True, BLACK)
+    compare_title_x = info_area_rect.centerx - compare_title_surf.get_width() // 2
+    screen.blit(compare_title_surf, (compare_title_x, current_info_y))
+    current_info_y += compare_title_surf.get_height() + 8
+
+    # Bảng So sánh (CẬP NHẬT HIỂN THỊ)
+    if solve_times:
+        sorted_times = sorted(solve_times.items(), key=lambda item: item[1])
+        for algo, time_val in sorted_times:
+            steps_val = last_solved_info.get(f"{algo}_steps", "N/A")
+            # LẤY THÔNG TIN REACHED_GOAL
+            reached_goal = last_solved_info.get(f"{algo}_reached_goal", None)
+
+            # Xây dựng chuỗi hiển thị
+            base_str = f"{algo}: {time_val:.3f}s"
+            steps_str = f" ({steps_val} steps)" if steps_val != "N/A" else " (-- steps)"
+            goal_str = " (Goal not found)" if reached_goal is False else "" # Chỉ thêm nếu False
+
+            comp_str = base_str + steps_str + goal_str
+
+            comp_surf = INFO_FONT.render(comp_str, True, BLACK)
+            # Hiển thị nếu vừa
+            if info_area_x + info_pad_x + comp_surf.get_width() < info_area_x + info_area_width - info_pad_x / 2:
+                 screen.blit(comp_surf, (info_area_x + info_pad_x, current_info_y))
+                 current_info_y += line_height
+            else: # Thử rút gọn nếu quá dài (bỏ steps)
+                 comp_str_short = base_str + goal_str
+                 comp_surf_short = INFO_FONT.render(comp_str_short, True, BLACK)
+                 if info_area_x + info_pad_x + comp_surf_short.get_width() < info_area_x + info_area_width - info_pad_x / 2:
+                     screen.blit(comp_surf_short, (info_area_x + info_pad_x, current_info_y))
+                     current_info_y += line_height
+                 # else: bỏ qua
+
+            if current_info_y > info_area_y + info_area_height - info_pad_y - line_height:
+                screen.blit(INFO_FONT.render("...", True, BLACK), (info_area_x + info_pad_x, current_info_y))
+                break
+    else:
+        no_comp_surf = INFO_FONT.render("(No results yet)", True, GRAY)
+        screen.blit(no_comp_surf, (info_area_x + info_pad_x, current_info_y))
+
+    # Vẽ Menu
+    menu_elements = draw_menu(show_menu, mouse_pos, current_algorithm)
+    pygame.display.flip()
+    return {'solve_button': solve_button_rect, 'reset_button': reset_button_rect, 'menu': menu_elements}
+
+
+# --- Hàm Main (Cập nhật logic lưu kết quả) ---
 def main():
+    global scroll_y
     current_state = copy.deepcopy(initial_state)
     solution = None
     step_index = 0
@@ -590,139 +515,122 @@ def main():
     auto_solve = False
     last_step_time = 0
     show_menu = False
-    menu_elements = None
     running = True
-    current_algorithm = 'BFS'  # Default algorithm
-    solve_time = 0  # Add this variable
-    solve_times = {}  # Dictionary to store times for each algorithm
-    
+    current_algorithm = 'A*'
+    solve_times = {}
+    # Lưu cả steps và reached_goal cho từng thuật toán
+    last_solved_info = {} # {'algo_steps': steps, 'algo_reached_goal': True/False}
+
+    clock = pygame.time.Clock()
+    ui_elements = {}
+
     while running:
-        current_time = time.time()
         mouse_pos = pygame.mouse.get_pos()
-        menu_elements = draw_grid(current_state, solution, step_index, show_menu, 
-                                current_algorithm, solve_times)  # Pass solve_times instead of solve_time
-        
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                x, y = pygame.mouse.get_pos()
-                
-                # Menu button click handling
-                if not show_menu:
-                    if x <= 50 and y <= 50:  # Menu button area
-                        show_menu = True
-                    else:
-                        # SOLVE button click - Updated coordinates
-                        current_state_x = (WIDTH - (MENU_WIDTH if show_menu else 0))//2 - (CELL_SIZE * GRID_SIZE)//2
-                        current_state_y = GRID_PADDING + CELL_SIZE * GRID_SIZE + 100
-                        solve_button_x = current_state_x - 170
-                        solve_button_y = current_state_y + CELL_SIZE//2
-                        
-                        if (solve_button_x <= x <= solve_button_x + 150 and 
-                            solve_button_y <= y <= solve_button_y + 50):
-                            solving = True
-                            auto_solve = True
-                            solution = None  # Reset solution when starting new solve
-                        
-                        # RESET button click - Updated coordinates
-                        reset_button_x = solve_button_x  # Same x as SOLVE button
-                        reset_button_y = solve_button_y + 60  # 60 pixels below SOLVE
-                        
-                        # RESET button click handling
-                        if (reset_button_x <= x <= reset_button_x + 150 and 
-                            reset_button_y <= y <= reset_button_y + 50):
-                            # Reset only state-related variables, keep solve_times
-                            current_state = copy.deepcopy(initial_state)
-                            solution = None
-                            step_index = 0
-                            solving = False
-                            auto_solve = False
-                else:
-                    if isinstance(menu_elements, tuple):
-                        _, close_button, bfs_button, dfs_button, ids_button, ucs_button, astar_button, greedy_button, ida_star_button, hill_climbing_button, steepest_button = menu_elements
-                        if close_button.collidepoint(x, y):
-                            show_menu = False
-                        elif bfs_button.collidepoint(x, y):
-                            current_algorithm = 'BFS'
-                            show_menu = False
-                        elif dfs_button.collidepoint(x, y):
-                            current_algorithm = 'DFS'
-                            show_menu = False
-                        elif ids_button.collidepoint(x, y):
-                            current_algorithm = 'IDS'
-                            show_menu = False
-                        elif ucs_button.collidepoint(x, y):
-                            current_algorithm = 'UCS'
-                            show_menu = False
-                        elif astar_button.collidepoint(x, y):
-                            current_algorithm = 'A*'
-                            show_menu = False
-                        elif greedy_button.collidepoint(x, y):
-                            current_algorithm = 'Greedy'
-                            show_menu = False
-                        elif ida_star_button.collidepoint(x, y):
-                            current_algorithm = 'IDA*'
-                            show_menu = False
-                        elif hill_climbing_button.collidepoint(x, y):
-                            current_algorithm = 'Hill Climbing'
-                            show_menu = False
-                        elif steepest_button.collidepoint(x, y):
-                            current_algorithm = 'Steepest Hill'
-                            show_menu = False
-        # Solve puzzle with selected algorithm
+        for event in pygame.event.get(): # Xử lý event như cũ
+            if event.type == pygame.QUIT: running = False; break
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                clicked_handled = False
+                if show_menu and not clicked_handled:
+                    menu_data=ui_elements.get('menu', {}); menu_area=menu_data.get('menu_area')
+                    if menu_area and menu_area.collidepoint(mouse_pos):
+                        close_button=menu_data.get('close_button')
+                        if close_button and close_button.collidepoint(mouse_pos): show_menu=False; clicked_handled=True
+                        if not clicked_handled:
+                            buttons=menu_data.get('buttons', {})
+                            for algo_id, button_rect_local in buttons.items():
+                                button_rect_screen = button_rect_local.move(0, -scroll_y)
+                                if button_rect_screen.collidepoint(mouse_pos):
+                                    if current_algorithm != algo_id: print(f"Algorithm changed to: {algo_id}"); current_algorithm=algo_id; solution=None; step_index=0; auto_solve=False
+                                    show_menu=False; clicked_handled=True; break
+                        if not clicked_handled: clicked_handled=True
+                if not clicked_handled:
+                    if not show_menu:
+                        menu_data=ui_elements.get('menu', {}); open_button=menu_data.get('open_button')
+                        if open_button and open_button.collidepoint(mouse_pos): show_menu=True; scroll_y=0; clicked_handled=True
+                    if not clicked_handled:
+                         solve_button = ui_elements.get('solve_button')
+                         if solve_button and solve_button.collidepoint(mouse_pos):
+                             if not auto_solve and not solving: print(f"Starting solve with {current_algorithm}..."); solving=True; solution=None; step_index=0; auto_solve=False
+                             clicked_handled=True
+                    if not clicked_handled:
+                         reset_button = ui_elements.get('reset_button')
+                         if reset_button and reset_button.collidepoint(mouse_pos):
+                             print("Resetting puzzle state."); current_state=copy.deepcopy(initial_state); solution=None; step_index=0; solving=False; auto_solve=False
+                             clicked_handled=True
+            if event.type == pygame.MOUSEWHEEL and show_menu:
+                menu_area=ui_elements.get('menu', {}).get('menu_area')
+                if menu_area and menu_area.collidepoint(mouse_pos):
+                    scroll_amount=event.y * 35; max_scroll=max(0, total_menu_height - HEIGHT); scroll_y=max(0, min(scroll_y - scroll_amount, max_scroll))
+        if not running: break
+
+        # --- Logic giải thuật (CẬP NHẬT LƯU KẾT QUẢ) ---
         if solving:
-            solving = False
+            solving = False; solve_start_time = time.time()
+            found_solution_path = None; error_occurred = False
             try:
-                solve_start = time.time()
-                
-                if current_algorithm == 'BFS':
-                    solution = bfs(current_state)
-                elif current_algorithm == 'DFS':
-                    solution = dfs(current_state)
-                elif current_algorithm == 'IDS':
-                    solution = ids(current_state)
-                elif current_algorithm == 'UCS':
-                    solution = ucs(current_state)
-                elif current_algorithm == 'A*':
-                    solution = astar(current_state)
-                elif current_algorithm == 'IDA*':
-                    solution = ida_star(current_state)
-                elif current_algorithm == 'Greedy': 
-                    solution = greedy(current_state)
-                elif current_algorithm == 'Hill Climbing':
-                    solution = simple_hill_climbing(current_state)
-                elif current_algorithm == 'Steepest Hill':
-                    solution = steepest_hill_climbing(current_state)
-                solve_duration = time.time() - solve_start
-                
-                if solution:
-                    step_index = 0
-                    current_state = copy.deepcopy(solution[step_index])
-                    solve_times[current_algorithm] = solve_duration
-                else:
-                    show_popup(f"No solution found with {current_algorithm}!")
-                    auto_solve = False
-            except Exception as e:
-                show_popup(f"Error during solving: {str(e)}")
-                solution = None
-                auto_solve = False
+                state_to_solve = copy.deepcopy(current_state); 
+                # Gọi thuật toán (như cũ, bao gồm SA)
+                if current_algorithm == 'BFS': found_solution_path = bfs(state_to_solve)
+                elif current_algorithm == 'DFS': found_solution_path = dfs(state_to_solve)
+                elif current_algorithm == 'IDS': found_solution_path = ids(state_to_solve)
+                elif current_algorithm == 'UCS': found_solution_path = ucs(state_to_solve)
+                elif current_algorithm == 'A*': found_solution_path = astar(state_to_solve)
+                elif current_algorithm == 'Greedy': found_solution_path = greedy(state_to_solve)
+                elif current_algorithm == 'IDA*': found_solution_path = ida_star(state_to_solve)
+                elif current_algorithm == 'Hill Climbing': found_solution_path = simple_hill_climbing(state_to_solve)
+                elif current_algorithm == 'Steepest Hill': found_solution_path = steepest_hill_climbing(state_to_solve)
+                elif current_algorithm == 'Stochastic Hill': found_solution_path = random_hill_climbing(state_to_solve)
+                elif current_algorithm == 'SA': found_solution_path = simulated_annealing(state_to_solve)
+                else: show_popup(f"Algorithm '{current_algorithm}' is not implemented.", "Error"); error_occurred = True
+            except Exception as e: show_popup(f"Error during {current_algorithm} solve:\n{e}", "Solver Error"); traceback.print_exc(); error_occurred = True
 
-        # Auto-solve animation - Added error checking
-        if auto_solve and solution and current_time - last_step_time >= 0.5:
-            try:
+            # Xử lý kết quả
+            if not error_occurred:
+                solve_duration = time.time() - solve_start_time
+                solve_times[current_algorithm] = solve_duration # Luôn lưu thời gian
+
+                if found_solution_path and len(found_solution_path) > 0: # Check path không rỗng
+                    steps = len(found_solution_path) - 1
+                    final_state = found_solution_path[-1]
+                    is_actually_goal = is_goal(final_state) # KIỂM TRA GOAL
+
+                    # LƯU CẢ STEPS VÀ REACHED_GOAL
+                    last_solved_info[f"{current_algorithm}_steps"] = steps
+                    last_solved_info[f"{current_algorithm}_reached_goal"] = is_actually_goal
+
+                    solution = found_solution_path; step_index = 0; auto_solve = True; last_step_time = time.time()
+                    if is_actually_goal: print(f"Solution found by {current_algorithm}: {steps} steps, {solve_duration:.4f}s")
+                    else: show_popup(f"{current_algorithm} finished in {solve_duration:.4f}s ({steps} steps).\nThe final state is NOT the goal.", "Search Complete")
+
+                else: # Không tìm thấy đường đi hoặc path rỗng
+                    solution = None; auto_solve = False
+                    # XÓA THÔNG TIN CŨ (steps, reached_goal) NẾU THẤT BẠI
+                    if f"{current_algorithm}_steps" in last_solved_info: del last_solved_info[f"{current_algorithm}_steps"]
+                    if f"{current_algorithm}_reached_goal" in last_solved_info: del last_solved_info[f"{current_algorithm}_reached_goal"]
+
+                    if solve_duration >= 29.9: print(f"{current_algorithm} timed out ({solve_duration:.4f}s)."); show_popup(f"{current_algorithm} timed out after ~30 seconds.", "Timeout")
+                    else: print(f"No solution found by {current_algorithm} ({solve_duration:.4f}s)."); show_popup(f"No solution path found by {current_algorithm}.", "No Solution")
+
+
+        # --- Logic animation (Giữ nguyên) ---
+        if auto_solve and solution:
+            current_time = time.time()
+            animation_speed = 0.3 if len(solution) < 30 else (0.2 if len(solution) < 60 else 0.1)
+            if current_time - last_step_time >= animation_speed:
                 if step_index < len(solution) - 1:
-                    step_index += 1
-                    current_state = copy.deepcopy(solution[step_index])
-                    last_step_time = current_time
+                    step_index += 1; current_state = copy.deepcopy(solution[step_index]); last_step_time = current_time
                 else:
                     auto_solve = False
-            except Exception as e:
-                print(f"Error during animation: {str(e)}")
-                auto_solve = False
+                    # Kiểm tra lại goal cuối cùng sau animation
+                    is_final_state_goal = is_goal(current_state)
+                    if is_final_state_goal: print("Animation complete: Goal reached!")
+                    else: print("Animation complete: Final state reached (Not Goal).")
 
-        pygame.time.delay(30)
+
+        # --- Vẽ lại giao diện ---
+        ui_elements = draw_grid_and_ui(current_state, show_menu, current_algorithm,
+                                       solve_times, last_solved_info)
+        clock.tick(60)
 
     pygame.quit()
     sys.exit()
