@@ -39,18 +39,18 @@ POPUP_HEIGHT = 250
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("LamVanDi-23110191 - 8 Puzzle Solver")
 
-# --- Puzzle Definition ---
-initial_state = [[8, 0, 5], [6, 2, 7], [4, 3, 1]] 
+
+initial_state = [[2, 6, 5], [0, 8, 7], [4, 3, 1]] 
 goal_state = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
 
-# --- Helper Functions ---
+
 def find_empty(state):
     """Finds the row and column of the empty tile (0)."""
     for i in range(GRID_SIZE):
         for j in range(GRID_SIZE):
             if state[i][j] == 0:
                 return i, j
-    return -1, -1 # Should not happen in a valid 8-puzzle state
+    return -1, -1 
 
 def is_goal(state):
     """Checks if the given state is the goal state."""
@@ -63,8 +63,8 @@ def get_neighbors(state):
     """Generates all valid neighbor states from the current state."""
     neighbors = []
     empty_i, empty_j = find_empty(state)
-    if empty_i == -1: return [] # No valid moves if no empty tile
-    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)] # Up, Down, Left, Right
+    if empty_i == -1: return [] 
+    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)] 
     for di, dj in directions:
         new_i, new_j = empty_i + di, empty_j + dj
         if 0 <= new_i < GRID_SIZE and 0 <= new_j < GRID_SIZE:
@@ -103,14 +103,14 @@ def apply_action_to_state(state_list, action):
     elif action == 'Down': di = 1
     elif action == 'Left': dj = -1
     elif action == 'Right': dj = 1
-    else: return new_state # Invalid action
+    else: return new_state 
 
     new_i, new_j = empty_i + di, empty_j + dj
     if 0 <= new_i < GRID_SIZE and 0 <= new_j < GRID_SIZE:
         new_state[empty_i][empty_j], new_state[new_i][new_j] = new_state[new_i][new_j], new_state[empty_i][empty_j]
         return new_state
     else:
-        return state_list # Action was invalid, return original
+        return state_list 
 
 def manhattan_distance(state):
     """Calculates the Manhattan distance heuristic."""
@@ -134,7 +134,7 @@ def execute_plan(start_state, action_plan):
     Applies a sequence of actions (plan) to a starting state
     and returns the resulting sequence of states for visualization.
     """
-    if not action_plan: # If plan is empty
+    if not action_plan: 
         return [start_state]
 
     current_state = copy.deepcopy(start_state)
@@ -142,7 +142,6 @@ def execute_plan(start_state, action_plan):
 
     for action in action_plan:
         next_state = apply_action_to_state(current_state, action)
-        # Assume plan is correct, just follow the derived state for simulation
         current_state = next_state
         state_sequence.append(copy.deepcopy(current_state))
 
@@ -150,7 +149,7 @@ def execute_plan(start_state, action_plan):
 
 # --- Search Algorithms ---
 
-# 1. Breadth-First Search (BFS)
+
 def bfs(initial_state, time_limit=30):
     start_time = time.time()
     queue = deque([(initial_state, [initial_state])])
@@ -168,7 +167,6 @@ def bfs(initial_state, time_limit=30):
                 queue.append((neighbor, path + [neighbor]))
     return None
 
-# 2. Depth-First Search (DFS)
 def dfs(initial_state, max_depth=30, time_limit=30):
     start_time = time.time()
     stack = [(initial_state, [initial_state], 0)] # state, path, depth
@@ -189,7 +187,6 @@ def dfs(initial_state, max_depth=30, time_limit=30):
                  stack.append((neighbor, path + [neighbor], depth + 1))
     return None
 
-# 3. Iterative Deepening Search (IDS)
 def ids(initial_state, max_depth_limit=30, time_limit=30):
     start_time = time.time()
     init_tuple = state_to_tuple(initial_state)
@@ -211,14 +208,13 @@ def ids(initial_state, max_depth_limit=30, time_limit=30):
                         stack.append((neighbor, path + [neighbor], depth + 1))
     return None
 
-# 4. Uniform Cost Search (UCS)
 def ucs(initial_state, time_limit=30):
     start_time = time.time()
     frontier = PriorityQueue()
     init_tuple = state_to_tuple(initial_state)
     if init_tuple is None: return None
-    frontier.put((0, initial_state, [initial_state])) # cost, state, path
-    visited = {init_tuple: 0} # state_tuple -> min cost
+    frontier.put((0, initial_state, [initial_state])) 
+    visited = {init_tuple: 0} 
     while not frontier.empty():
         if time.time() - start_time > time_limit: print("UCS Timeout"); return None
         cost, current_state, path = frontier.get()
@@ -229,13 +225,13 @@ def ucs(initial_state, time_limit=30):
         for neighbor in get_neighbors(current_state):
             neighbor_tuple = state_to_tuple(neighbor)
             if neighbor_tuple is None: continue
-            new_cost = cost + 1 # Uniform cost
+            new_cost = cost + 1 
             if neighbor_tuple not in visited or new_cost < visited[neighbor_tuple]:
                 visited[neighbor_tuple] = new_cost
                 frontier.put((new_cost, neighbor, path + [neighbor]))
     return None
 
-# 5. A* Search
+
 def astar(initial_state, time_limit=30):
     start_time = time.time()
     frontier = PriorityQueue()
@@ -244,8 +240,8 @@ def astar(initial_state, time_limit=30):
     f_init = g_init + h_init
     init_tuple = state_to_tuple(initial_state)
     if init_tuple is None: return None
-    frontier.put((f_init, g_init, initial_state, [initial_state])) # f, g, state, path
-    visited = {init_tuple: g_init} # state_tuple -> min g_score
+    frontier.put((f_init, g_init, initial_state, [initial_state])) 
+    visited = {init_tuple: g_init} 
     while not frontier.empty():
         if time.time() - start_time > time_limit: print("A* Timeout"); return None
         f_score, g_score, current_state, path = frontier.get()
@@ -264,13 +260,13 @@ def astar(initial_state, time_limit=30):
                 frontier.put((f, tentative_g, neighbor, path + [neighbor]))
     return None
 
-# 6. Greedy Best-First Search
+
 def greedy(initial_state, time_limit=30):
     start_time = time.time()
     frontier = PriorityQueue()
     init_tuple = state_to_tuple(initial_state)
     if init_tuple is None: return None
-    frontier.put((manhattan_distance(initial_state), initial_state, [initial_state])) # h, state, path
+    frontier.put((manhattan_distance(initial_state), initial_state, [initial_state])) 
     visited = {init_tuple}
     while not frontier.empty():
         if time.time() - start_time > time_limit: print("Greedy Timeout"); return None
@@ -284,9 +280,8 @@ def greedy(initial_state, time_limit=30):
                 frontier.put((h, neighbor, path + [neighbor]))
     return None
 
-# 7. Iterative Deepening A* (IDA*)
+
 def search_ida(path, g, threshold, visited_in_iteration, start_time, time_limit):
-    """Recursive helper for IDA*."""
     current_state = path[-1]
     h = manhattan_distance(current_state)
     f = g + h
@@ -299,18 +294,17 @@ def search_ida(path, g, threshold, visited_in_iteration, start_time, time_limit)
         neighbor_tuple = state_to_tuple(neighbor)
         if neighbor_tuple is None: continue
         new_g = g + 1
-        # Prune cycles/revisited states within the current iteration more efficiently
         if neighbor_tuple not in visited_in_iteration or new_g < visited_in_iteration[neighbor_tuple]:
             visited_in_iteration[neighbor_tuple] = new_g
             path.append(neighbor)
             result, recursive_threshold = search_ida(path, new_g, threshold, visited_in_iteration, start_time, time_limit)
-            path.pop() # Backtrack
+            path.pop() 
             if result == "Timeout": return "Timeout", float('inf')
-            if result is not None: return result, threshold # Solution found
+            if result is not None: return result, threshold 
             min_new_threshold = min(min_new_threshold, recursive_threshold)
     return None, min_new_threshold
 
-def ida_star(initial_state, time_limit=60): # Longer time limit for IDA*
+def ida_star(initial_state, time_limit=60): 
     start_time = time.time()
     init_tuple = state_to_tuple(initial_state)
     if init_tuple is None: return None
@@ -318,17 +312,16 @@ def ida_star(initial_state, time_limit=60): # Longer time limit for IDA*
     path = [initial_state]
     while True:
         if time.time() - start_time >= time_limit: print("IDA* Global Timeout"); return None
-        visited_in_iteration = {init_tuple: 0} # Reset visited for each threshold iteration
+        visited_in_iteration = {init_tuple: 0} 
         result, new_threshold = search_ida(path, 0, threshold, visited_in_iteration, start_time, time_limit)
         if result == "Timeout": print("IDA* Timeout during search"); return None
-        if result is not None: return result # Solution found
-        if new_threshold == float('inf'): print("IDA*: Search exhausted"); return None # No solution possible
-        if new_threshold <= threshold: new_threshold = threshold + 1 # Ensure threshold increases
+        if result is not None: return result 
+        if new_threshold == float('inf'): print("IDA*: Search exhausted"); return None 
+        if new_threshold <= threshold: new_threshold = threshold + 1 
         threshold = new_threshold
-    # This return is unreachable due to the loop structure but good practice
-    # return None # No solution found (technically covered by new_threshold == inf)
 
-# 8. Simple Hill Climbing
+
+
 def simple_hill_climbing(initial_state, time_limit=30):
     start_time = time.time()
     current_state = initial_state
@@ -346,12 +339,11 @@ def simple_hill_climbing(initial_state, time_limit=30):
                 best_neighbor = neighbor
                 current_h = h
                 found_better = True
-                break # Move to first better neighbor
+                break 
         if not found_better: print("Simple Hill Climb: Local optimum"); return path # Stuck
         current_state = best_neighbor
         path.append(current_state)
 
-# 9. Steepest Ascent Hill Climbing
 def steepest_hill_climbing(initial_state, time_limit=30):
     start_time = time.time()
     current_state = initial_state
@@ -373,7 +365,6 @@ def steepest_hill_climbing(initial_state, time_limit=30):
         current_h = best_h
         path.append(current_state)
 
-# 10. Stochastic Hill Climbing (Random Hill Climbing)
 def random_hill_climbing(initial_state, time_limit=30, max_iter_no_improve=500):
     start_time = time.time()
     current_state = initial_state
@@ -387,7 +378,7 @@ def random_hill_climbing(initial_state, time_limit=30, max_iter_no_improve=500):
         if not neighbors: print("Stochastic Hill Climb: No neighbors"); break
         random_neighbor = random.choice(neighbors)
         neighbor_h = manhattan_distance(random_neighbor)
-        if neighbor_h <= current_h: # Accept better or equal
+        if neighbor_h <= current_h: 
             if neighbor_h < current_h: iter_no_improve = 0
             else: iter_no_improve += 1
             current_state = random_neighbor
@@ -397,13 +388,12 @@ def random_hill_climbing(initial_state, time_limit=30, max_iter_no_improve=500):
         if iter_no_improve >= max_iter_no_improve: print(f"Stochastic Hill Climb: Stuck ({max_iter_no_improve} iters)"); return path
     return path
 
-# 11. Simulated Annealing (SA)
 def simulated_annealing(initial_state, initial_temp=1000, cooling_rate=0.99, min_temp=0.1, time_limit=30):
     start_time = time.time()
     current_state = initial_state
     current_h = manhattan_distance(current_state)
     path = [current_state]
-    best_state = current_state # Track best state found
+    best_state = current_state 
     best_h = current_h
     temp = initial_temp
     while temp > min_temp:
@@ -414,102 +404,90 @@ def simulated_annealing(initial_state, initial_temp=1000, cooling_rate=0.99, min
         next_state = random.choice(neighbors)
         next_h = manhattan_distance(next_state)
         delta_h = next_h - current_h
-        if delta_h < 0: # Better state
+        if delta_h < 0: 
             current_state = next_state; current_h = next_h; path.append(current_state)
-            if current_h < best_h: best_h = current_h; best_state = current_state # Update best
-        else: # Worse state - accept probabilistically
+            if current_h < best_h: best_h = current_h; best_state = current_state 
+        else: 
             if temp > 0:
                  acceptance_prob = math.exp(-delta_h / temp)
                  if random.random() < acceptance_prob:
                      current_state = next_state; current_h = next_h; path.append(current_state)
         temp *= cooling_rate
     print(f"SA: Cooled down. Best h={best_h}")
-    # Return the path of accepted states. The calling function checks if the *last* state is the goal.
     return path
 
-# 12. Beam Search
-def beam_search(initial_state, beam_width=5, time_limit=30): # Increased default beam_width
+
+def beam_search(initial_state, beam_width=5, time_limit=30): 
     start_time = time.time()
     if is_goal(initial_state): return [initial_state]
     h_init = manhattan_distance(initial_state)
-    beam = [(initial_state, [initial_state], h_init)] # state, path, heuristic
+    beam = [(initial_state, [initial_state], h_init)] 
     visited = set()
     init_tuple = state_to_tuple(initial_state)
     if init_tuple is None: return None
     visited.add(init_tuple)
-    best_goal_path = None # Store the best path ending in goal found so far
+    best_goal_path = None
 
     while beam:
         if time.time() - start_time > time_limit: print("Beam Search Timeout"); return best_goal_path
         next_level_candidates = []
-        processed_in_level = set() # Avoid duplicates within the *next* level candidates
-
-        # Expand states currently in the beam
+        processed_in_level = set() 
         for current_state, path, _ in beam:
             for neighbor in get_neighbors(current_state):
                 neighbor_tuple = state_to_tuple(neighbor)
-                # Skip if invalid, already globally visited, or already added to *this* level's candidates
                 if neighbor_tuple is None or neighbor_tuple in visited or neighbor_tuple in processed_in_level:
                     continue
 
-                visited.add(neighbor_tuple) # Mark globally visited
-                processed_in_level.add(neighbor_tuple) # Mark processed for this next level generation
+                visited.add(neighbor_tuple) 
+                processed_in_level.add(neighbor_tuple)
 
                 new_path = path + [neighbor]
                 if is_goal(neighbor):
-                    # Found a potential goal path, store if it's the best so far
                     if best_goal_path is None or len(new_path) < len(best_goal_path):
                         best_goal_path = new_path
-                    # Continue searching within level even if goal found, might find better via another beam path
                 h_neighbor = manhattan_distance(neighbor)
                 next_level_candidates.append((neighbor, new_path, h_neighbor))
 
-        if not next_level_candidates: break # No more states to explore
-        next_level_candidates.sort(key=lambda x: x[2]) # Sort candidates by heuristic
-        beam = next_level_candidates[:beam_width] # Select top candidates for the next beam
+        if not next_level_candidates: break 
+        next_level_candidates.sort(key=lambda x: x[2]) 
+        beam = next_level_candidates[:beam_width] 
 
-    # Loop finished or timed out
     if best_goal_path: print(f"Beam Search: Goal found len={len(best_goal_path)}")
     else: print("Beam Search: Beam empty or timeout before finding goal.")
-    return best_goal_path # Return the best goal path found (or None)
+    return best_goal_path 
 
-# 13. AND-OR Graph Search (Conceptual Adaptation)
 SOLVED = "SOLVED"
 UNSOLVED = "UNSOLVED"
-MAX_AND_OR_DEPTH = 50 # Recursion depth limit
+MAX_AND_OR_DEPTH = 50 
 
 def _and_or_recursive(state, path, solved_states, unsolved_states, start_time, time_limit, depth):
-    """Recursive helper for AND-OR search simulation."""
+
     state_tuple = state_to_tuple(state)
     if state_tuple is None: return UNSOLVED, None
     if time.time() - start_time > time_limit: return "Timeout", None
-    if depth > MAX_AND_OR_DEPTH: return UNSOLVED, None # Depth limit
+    if depth > MAX_AND_OR_DEPTH: return UNSOLVED, None 
     if is_goal(state): solved_states.add(state_tuple); return SOLVED, path
-    if state_tuple in solved_states: return SOLVED, path # Memoization
-    if state_tuple in unsolved_states: return UNSOLVED, None # Memoization
+    if state_tuple in solved_states: return SOLVED, path 
+    if state_tuple in unsolved_states: return UNSOLVED, None 
 
-    unsolved_states.add(state_tuple) # Mark as exploring (tentatively unsolved)
+    unsolved_states.add(state_tuple) 
 
-    # OR Node Logic: If any neighbor leads to SOLVED, this is SOLVED.
     for neighbor in get_neighbors(state):
         neighbor_tuple = state_to_tuple(neighbor)
-        if neighbor_tuple is None or neighbor_tuple in unsolved_states: continue # Skip invalid or known dead ends
+        if neighbor_tuple is None or neighbor_tuple in unsolved_states: continue
 
-        # Recursive call
         status, solution_path = _and_or_recursive(neighbor, path + [neighbor], solved_states, unsolved_states, start_time, time_limit, depth + 1)
 
-        if status == "Timeout": return "Timeout", None # Propagate timeout
+        if status == "Timeout": return "Timeout", None
         if status == SOLVED:
-            solved_states.add(state_tuple) # Mark current as solvable
-            if state_tuple in unsolved_states: unsolved_states.remove(state_tuple) # Correct temporary mark
-            return SOLVED, solution_path # Return the successful path
+            solved_states.add(state_tuple)
+            if state_tuple in unsolved_states: unsolved_states.remove(state_tuple) 
+            return SOLVED, solution_path 
 
-    # If loop finishes, no neighbor led to solution -> state is UNSOLVED
-    # (It remains in unsolved_states from the mark at the beginning)
+
     return UNSOLVED, None
 
 def and_or_search(initial_state, time_limit=30):
-    """Conceptual AND-OR search for 8-puzzle (acts like Memoized DFS)."""
     start_time = time.time()
     solved_states = set()
     unsolved_states = set()
@@ -521,13 +499,8 @@ def and_or_search(initial_state, time_limit=30):
     if status == SOLVED: print("AND-OR: Solution found."); return solution_path
     elif status == "Timeout": print(f"AND-OR: Timeout ({time_limit}s)."); return None
     else: print("AND-OR: No solution found (exhausted/depth limit)."); return None
-
-# 14. Sensorless Search (Belief State BFS)
 def sensorless_search(initial_belief_state_list, time_limit=30):
-    """Finds a plan (sequence of actions) for a sensorless problem."""
     start_time = time.time()
-
-    # Convert initial list states to a frozenset of tuple states (the initial belief state)
     initial_belief_tuples = set()
     for state_list in initial_belief_state_list:
         st_tuple = state_to_tuple(state_list)
@@ -538,72 +511,58 @@ def sensorless_search(initial_belief_state_list, time_limit=30):
 
     initial_belief_state = frozenset(initial_belief_tuples)
     goal_state_tuple = state_to_tuple(goal_state)
-    goal_belief_state = frozenset([goal_state_tuple]) # Goal is reached when belief state has only the goal
+    goal_belief_state = frozenset([goal_state_tuple]) 
 
     if initial_belief_state == goal_belief_state:
-        return [] # Already at goal, no actions needed
+        return []
 
-    queue = deque([(initial_belief_state, [])]) # (current_belief_state, list_of_actions)
-    visited = {initial_belief_state} # Set of visited belief states (frozensets)
+    queue = deque([(initial_belief_state, [])]) 
+    visited = {initial_belief_state} 
     possible_actions = ['Up', 'Down', 'Left', 'Right']
 
     while queue:
-        # Time limit check
         if time.time() - start_time > time_limit:
             print(f"Sensorless Timeout ({time_limit}s)")
             return None
 
         current_belief_state, actions_taken = queue.popleft()
-
-        # Check if goal reached (belief state contains only the goal state)
-        # Note: This assumes the goal is a single state. If the goal could be a set
-        # of states, this condition would need modification.
         if current_belief_state == goal_belief_state:
             print(f"Sensorless: Plan found ({len(actions_taken)} actions).")
-            return actions_taken # Return the list of actions
-
-        # Explore possible actions from the current belief state
+            return actions_taken 
         for action in possible_actions:
             next_belief_state_set = set()
-            possible_transition = True # Flag to check if conversion works for all states
-
-            # Apply action to each state *within* the current belief state
+            possible_transition = True 
             for state_tuple in current_belief_state:
                 state_list = tuple_to_list(state_tuple)
-                if state_list is None: # Should not happen if conversion worked initially
+                if state_list is None: 
                     possible_transition = False; break
-
-                # Get the result of applying the action to this specific state
                 next_state_list = apply_action_to_state(state_list, action)
                 next_state_tuple = state_to_tuple(next_state_list)
 
-                if next_state_tuple is None: # Should not happen
+                if next_state_tuple is None: 
                      possible_transition = False; break
 
                 next_belief_state_set.add(next_state_tuple)
 
-            if not possible_transition: continue # Skip action if error occurred during state processing
+            if not possible_transition: continue 
 
-            # Create the next belief state (as a frozenset for hashing)
             next_belief_state = frozenset(next_belief_state_set)
 
-            # If this belief state hasn't been visited, add it to the queue
             if next_belief_state not in visited:
                 visited.add(next_belief_state)
                 new_actions = actions_taken + [action]
                 queue.append((next_belief_state, new_actions))
 
     print("Sensorless: Queue empty, no plan found.")
-    return None # No solution found
+    return None 
 
 
-# --- Drawing Functions ---
 scroll_y = 0
 menu_surface = None
 total_menu_height = 0
 
 def draw_state(state, x, y, title):
-    """Draws a single state of the puzzle grid."""
+
     title_font = BUTTON_FONT
     title_text = title_font.render(title, True, BLACK)
     title_x = x + (GRID_DISPLAY_WIDTH // 2 - title_text.get_width() // 2)
@@ -616,16 +575,16 @@ def draw_state(state, x, y, title):
             cell_rect = pygame.Rect(cell_x, cell_y, CELL_SIZE, CELL_SIZE)
             if state[i][j] != 0:
                 is_correct_pos = False
-                try: # Check goal state structure before access
+                try:
                     if isinstance(goal_state, list) and len(goal_state) > i and isinstance(goal_state[i], list) and len(goal_state[i]) > j:
                          is_correct_pos = (state[i][j] == goal_state[i][j])
-                except IndexError: pass # Ignore index error if goal_state malformed
+                except IndexError: pass 
                 color = GREEN if is_correct_pos else BLUE
                 pygame.draw.rect(screen, color, cell_rect.inflate(-6, -6), border_radius=8)
                 number = FONT.render(str(state[i][j]), True, WHITE)
                 screen.blit(number, number.get_rect(center=cell_rect.center))
-            else: pygame.draw.rect(screen, GRAY, cell_rect.inflate(-6, -6), border_radius=8) # Empty cell
-            pygame.draw.rect(screen, BLACK, cell_rect, 1) # Cell border
+            else: pygame.draw.rect(screen, GRAY, cell_rect.inflate(-6, -6), border_radius=8) 
+            pygame.draw.rect(screen, BLACK, cell_rect, 1)
 
 def show_popup(message, title="Info"):
     """Displays a modal popup message box with word wrap."""
@@ -634,42 +593,38 @@ def show_popup(message, title="Info"):
     title_font = pygame.font.SysFont('Arial', 28, bold=True); title_surf = title_font.render(title, True, INFO_COLOR)
     title_rect = title_surf.get_rect(center=(POPUP_WIDTH // 2, 30)); popup_surface.blit(title_surf, title_rect)
 
-    # Word wrap logic
     words = message.split(' '); lines = []; current_line = ""; text_width_limit = POPUP_WIDTH - 50
     for word in words:
-        if "\n" in word: # Handle explicit newlines
+        if "\n" in word: 
             parts = word.split("\n")
             for i, part in enumerate(parts):
-                if not part: continue # Skip empty parts from consecutive \n
+                if not part: continue 
                 test_line_part = current_line + (" " if current_line else "") + part
                 line_width_part = INFO_FONT.size(test_line_part)[0] if INFO_FONT else 0
                 if line_width_part <= text_width_limit: current_line = test_line_part
                 else: lines.append(current_line); current_line = part
-                if i < len(parts) - 1: lines.append(current_line); current_line = "" # Add line break
-        else: # Handle regular words
+                if i < len(parts) - 1: lines.append(current_line); current_line = "" 
+        else: 
             test_line = current_line + (" " if current_line else "") + word
             line_width = INFO_FONT.size(test_line)[0] if INFO_FONT else 0
             if line_width <= text_width_limit: current_line = test_line
             else: lines.append(current_line); current_line = word
-    lines.append(current_line) # Add the last line
+    lines.append(current_line) 
 
-    # Render lines
     line_height = INFO_FONT.get_linesize() if INFO_FONT else 20; start_y = title_rect.bottom + 20
     for i, line in enumerate(lines):
          if INFO_FONT:
              text_surf = INFO_FONT.render(line, True, BLACK)
-             # Center each line
              text_rect = text_surf.get_rect(center=(POPUP_WIDTH // 2, start_y + i * line_height))
              popup_surface.blit(text_surf, text_rect)
 
-    # OK button
+
     ok_button_rect = pygame.Rect(POPUP_WIDTH // 2 - 60, POPUP_HEIGHT - 65, 120, 40)
     pygame.draw.rect(popup_surface, INFO_COLOR, ok_button_rect, border_radius=8)
     ok_text_surf = BUTTON_FONT.render("OK", True, WHITE) if BUTTON_FONT else None
     if ok_text_surf:
          ok_text_rect = ok_text_surf.get_rect(center=ok_button_rect.center); popup_surface.blit(ok_text_surf, ok_text_rect)
 
-    # Blit and wait
     popup_rect = popup_surface.get_rect(center=(WIDTH // 2, HEIGHT // 2)); screen.blit(popup_surface, popup_rect)
     pygame.display.flip(); waiting = True
     while waiting:
@@ -683,7 +638,7 @@ def show_popup(message, title="Info"):
         pygame.time.delay(20) # Prevent high CPU usage while waiting
 
 def draw_menu(show_menu, mouse_pos, current_algorithm):
-    """Draws the algorithm selection menu, handles scrolling."""
+
     global scroll_y, menu_surface, total_menu_height
     menu_elements = {}
     # --- Menu Hidden: Draw Hamburger Button ---
@@ -758,7 +713,7 @@ def draw_grid_and_ui(state, show_menu, current_algorithm, solve_times, last_solv
     main_area_width = WIDTH - main_area_x
     center_x_main = main_area_x + main_area_width // 2
 
-    # --- Layout Calculations ---
+  
     top_row_y = GRID_PADDING + 40; grid_spacing_top = GRID_PADDING * 1.5
     total_width_top = 2 * GRID_DISPLAY_WIDTH + grid_spacing_top
     start_x_top = center_x_main - total_width_top // 2
@@ -777,7 +732,7 @@ def draw_grid_and_ui(state, show_menu, current_algorithm, solve_times, last_solv
     info_area_width = max(150, main_area_x + main_area_width - info_area_x - GRID_PADDING) # Dynamic width
     info_area_height = GRID_DISPLAY_WIDTH; info_area_rect = pygame.Rect(info_area_x, info_area_y, info_area_width, info_area_height)
 
-    # --- Draw Static Elements ---
+
     draw_state(initial_state, initial_x, top_row_y, "Initial State")
     draw_state(goal_state, goal_x, top_row_y, "Goal State")
     draw_state(state, current_state_x, current_state_y, f"Current ({current_algorithm})")
@@ -786,9 +741,9 @@ def draw_grid_and_ui(state, show_menu, current_algorithm, solve_times, last_solv
     pygame.draw.rect(screen, BLUE, reset_button_rect, border_radius=5)
     reset_text = BUTTON_FONT.render("RESET", True, WHITE); screen.blit(reset_text, reset_text.get_rect(center=reset_button_rect.center))
 
-    # --- Draw Info Area (Comparison Panel) ---
-    pygame.draw.rect(screen, INFO_BG, info_area_rect, border_radius=8) # Background
-    pygame.draw.rect(screen, GRAY, info_area_rect, 2, border_radius=8) # Border
+
+    pygame.draw.rect(screen, INFO_BG, info_area_rect, border_radius=8) 
+    pygame.draw.rect(screen, GRAY, info_area_rect, 2, border_radius=8)
     info_pad_x = 15; info_pad_y = 10; line_height = INFO_FONT.get_linesize() + 4
     current_info_y = info_area_y + info_pad_y
 
@@ -798,39 +753,38 @@ def draw_grid_and_ui(state, show_menu, current_algorithm, solve_times, last_solv
     screen.blit(compare_title_surf, (compare_title_x, current_info_y))
     current_info_y += compare_title_surf.get_height() + 8
 
-    # Display Solve Results
+  
     if solve_times:
-        sorted_times = sorted(solve_times.items(), key=lambda item: item[1]) # Sort by time
+        sorted_times = sorted(solve_times.items(), key=lambda item: item[1]) 
         for algo, time_val in sorted_times:
-            # Get steps or actions, and goal status
+           
             steps_val = last_solved_info.get(f"{algo}_steps", None)
             actions_val = last_solved_info.get(f"{algo}_actions", None)
             reached_goal = last_solved_info.get(f"{algo}_reached_goal", None)
 
-            # Build display string
+         
             base_str = f"{algo}: {time_val:.3f}s"
             count_str = ""
             if steps_val is not None: count_str = f" ({steps_val} steps)"
-            elif actions_val is not None: count_str = f" ({actions_val} actions)" # Show actions for Sensorless
-            else: count_str = " (--)" # Indicate if neither is available
-            # Show "(Not Goal)" only if explicitly False
+            elif actions_val is not None: count_str = f" ({actions_val} actions)" 
+            else: count_str = " (--)" 
             goal_str = " (Not Goal)" if reached_goal is False else ""
 
             comp_str = base_str + count_str + goal_str
             comp_surf = INFO_FONT.render(comp_str, True, BLACK)
 
-            # Check if text fits horizontally and vertically
+            
             text_fits = info_area_x + info_pad_x + comp_surf.get_width() < info_area_x + info_area_width - info_pad_x / 2
             if current_info_y + line_height < info_area_y + info_area_height - info_pad_y:
                 if text_fits:
                     screen.blit(comp_surf, (info_area_x + info_pad_x, current_info_y)); current_info_y += line_height
-                else: # Try shorter string if full one doesn't fit
+                else: 
                     comp_str_short = base_str + goal_str
                     comp_surf_short = INFO_FONT.render(comp_str_short, True, BLACK)
                     if info_area_x + info_pad_x + comp_surf_short.get_width() < info_area_x + info_area_width - info_pad_x / 2:
                          screen.blit(comp_surf_short, (info_area_x + info_pad_x, current_info_y)); current_info_y += line_height
-                    # else: skip if even short doesn't fit
-            else: # Not enough vertical space
+                 
+            else: 
                 screen.blit(INFO_FONT.render("...", True, BLACK), (info_area_x + info_pad_x, current_info_y)); break # Stop adding more lines
 
     else: # No results yet
@@ -847,87 +801,76 @@ def draw_grid_and_ui(state, show_menu, current_algorithm, solve_times, last_solv
     return {'solve_button': solve_button_rect, 'reset_button': reset_button_rect, 'menu': menu_elements}
 
 
-# --- Main Game Loop ---
-def main():
-    global scroll_y, initial_state # Allow modification if needed later
 
-    # --- Define initial belief state for Sensorless demo ---
-    # IMPORTANT: Add multiple *different* initial states here to represent real uncertainty.
-    # Using just the default initial_state will run, but won't show the true sensorless concept.
+def main():
+    global scroll_y, initial_state 
+
+
     initial_belief_list_for_sensorless = [
          copy.deepcopy(initial_state),
-         # Example: Add another possible starting state if needed
-         # [[1, 0, 3], [4, 2, 5], [6, 7, 8]],
-         # [[1, 2, 3], [4, 5, 6], [0, 7, 8]]
+        
     ]
-    # Check if belief list is valid
     if not initial_belief_list_for_sensorless:
         print("ERROR: initial_belief_list_for_sensorless is empty! Add at least one state.")
         initial_belief_list_for_sensorless = [copy.deepcopy(initial_state)] # Fallback
 
 
-    current_state = copy.deepcopy(initial_state) # State used for display
-    solution = None       # Holds state path (most algos) or action list (initially for Sensorless)
-    step_index = 0      # Index for state animation
-    solving = False       # Algorithm running flag
-    auto_solve = False    # Animation running flag
-    last_step_time = 0  # Animation timer
-    show_menu = False     # Menu visibility
+    current_state = copy.deepcopy(initial_state) 
+    solution = None       
+    step_index = 0     
+    solving = False       
+    auto_solve = False    
+    last_step_time = 0 
+    show_menu = False     
     running = True
-    current_algorithm = 'A*' # Default algorithm
-    solve_times = {}      # {algo_name: time_taken}
-    last_solved_info = {} # Stores detailed results: {algo_steps/actions: N, algo_reached_goal: Bool}
+    current_algorithm = 'A*' 
+    solve_times = {}      
+    last_solved_info = {} 
 
     clock = pygame.time.Clock()
-    ui_elements = {} # Store rects of interactive UI elements
-
+    ui_elements = {} 
     while running:
         mouse_pos = pygame.mouse.get_pos()
 
-        # --- Event Handling ---
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT: running = False; break
 
-            # --- Mouse Button Down ---
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: # Left click
-                clicked_handled = False # Prevent multiple actions per click
+    
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: 
+                clicked_handled = False 
 
-                # 1. Check Menu Interactions (if menu is shown)
                 if show_menu and not clicked_handled:
                     menu_data = ui_elements.get('menu', {})
                     menu_area = menu_data.get('menu_area')
                     if menu_area and menu_area.collidepoint(mouse_pos):
-                        # a) Check Close Button
                         close_button = menu_data.get('close_button')
                         if close_button and close_button.collidepoint(mouse_pos):
                             show_menu = False; clicked_handled = True
-                        # b) Check Algorithm Buttons (if close not clicked)
                         if not clicked_handled:
                             buttons = menu_data.get('buttons', {})
                             for algo_id, button_rect_local in buttons.items():
-                                button_rect_screen = button_rect_local.move(0, -scroll_y) # Adjust for scroll
+                                button_rect_screen = button_rect_local.move(0, -scroll_y) 
                                 if button_rect_screen.collidepoint(mouse_pos):
-                                    if current_algorithm != algo_id: # Change algorithm
+                                    if current_algorithm != algo_id: 
                                         print(f"Algorithm changed to: {algo_id}")
                                         current_algorithm = algo_id
-                                        solution = None; step_index = 0; auto_solve = False # Reset solve state
-                                    show_menu = False # Close menu after selection
-                                    clicked_handled = True; break # Exit button loop
-                        # c) Click inside menu but not on item (consume click)
+                                        solution = None; step_index = 0; auto_solve = False 
+                                    show_menu = False
+                                    clicked_handled = True; break 
+
                         if not clicked_handled: clicked_handled = True
 
-                # 2. Check Menu Open Button (if menu is hidden)
                 if not show_menu and not clicked_handled:
                      menu_data = ui_elements.get('menu', {})
                      open_button = menu_data.get('open_button')
                      if open_button and open_button.collidepoint(mouse_pos):
-                         show_menu = True; scroll_y = 0; clicked_handled = True # Open menu, reset scroll
+                         show_menu = True; scroll_y = 0; clicked_handled = True 
 
-                # 3. Check Solve Button
                 if not clicked_handled:
                     solve_button = ui_elements.get('solve_button')
                     if solve_button and solve_button.collidepoint(mouse_pos):
-                        if not auto_solve and not solving: # Start solve only if idle
+                        if not auto_solve and not solving:
                              print(f"Starting solve with {current_algorithm}...")
                              solving = True; solution = None; step_index = 0; auto_solve = False
                         clicked_handled = True
@@ -938,36 +881,33 @@ def main():
                     if reset_button and reset_button.collidepoint(mouse_pos):
                         print("Resetting puzzle state."); current_state = copy.deepcopy(initial_state)
                         solution = None; step_index = 0; solving = False; auto_solve = False
-                        # Option: Clear results on reset?
-                        # solve_times = {}; last_solved_info = {}
+
                         clicked_handled = True
 
-            # --- Mouse Wheel Scrolling (for menu) ---
+
             if event.type == pygame.MOUSEWHEEL and show_menu:
                 menu_area = ui_elements.get('menu', {}).get('menu_area')
                 if menu_area and menu_area.collidepoint(mouse_pos) and total_menu_height > HEIGHT:
-                    scroll_amount = event.y * 35 # Adjust scroll sensitivity
+                    scroll_amount = event.y * 35 
                     max_scroll = max(0, total_menu_height - HEIGHT)
-                    scroll_y = max(0, min(scroll_y - scroll_amount, max_scroll)) # Clamp scroll
+                    scroll_y = max(0, min(scroll_y - scroll_amount, max_scroll)) 
 
-        if not running: break # Exit main loop if running flag is False
+        if not running: break 
 
         # --- Solving Logic ---
         if solving:
-            solving = False # Consume the flag
+            solving = False 
             solve_start_time = time.time()
-            found_solution_path = None # For state-based results
-            found_action_plan = None   # For action-based results (Sensorless)
+            found_solution_path = None 
+            found_action_plan = None  
             error_occurred = False
             is_sensorless_algo = (current_algorithm == 'Sensorless')
             algo_func = None
             algo_args = []
-            time_limit = 30 # Default time limit
+            time_limit = 30 
 
             try:
-                state_to_solve = copy.deepcopy(current_state) # Copy for state-based algos
-
-                # Map algorithm ID to function, arguments, and potentially time limit
+                state_to_solve = copy.deepcopy(current_state) 
                 if current_algorithm == 'BFS': algo_func = bfs; algo_args = [state_to_solve]; time_limit = 30
                 elif current_algorithm == 'DFS': algo_func = dfs; algo_args = [state_to_solve]; time_limit = 30
                 elif current_algorithm == 'IDS': algo_func = ids; algo_args = [state_to_solve]; time_limit = 30
@@ -983,18 +923,17 @@ def main():
                 elif current_algorithm == 'AND-OR': algo_func = and_or_search; algo_args = [state_to_solve]; time_limit = 30
                 elif current_algorithm == 'Sensorless':
                     algo_func = sensorless_search
-                    algo_args = [initial_belief_list_for_sensorless] # Pass belief list
-                    time_limit = 30 # Default for sensorless, can be adjusted
+                    algo_args = [initial_belief_list_for_sensorless] 
+                    time_limit = 30
                     is_sensorless_algo = True
                 else:
                     show_popup(f"Algorithm '{current_algorithm}' is not implemented.", "Error"); error_occurred = True
 
                 # Execute the algorithm if mapped, passing the specific time limit
                 if algo_func and not error_occurred:
-                    # Include time_limit if the function accepts it
                     func_params = algo_func.__code__.co_varnames[:algo_func.__code__.co_argcount]
                     if 'time_limit' in func_params:
-                         algo_args.append(time_limit) # Add time_limit as the last positional arg if accepted
+                         algo_args.append(time_limit) 
 
                     if is_sensorless_algo:
                         found_action_plan = algo_func(*algo_args)
@@ -1007,98 +946,88 @@ def main():
             # --- Process Results ---
             if not error_occurred:
                 solve_duration = time.time() - solve_start_time
-                solve_times[current_algorithm] = solve_duration # Store time
+                solve_times[current_algorithm] = solve_duration 
 
                 # --- Sensorless Plan Handling ---
                 if is_sensorless_algo:
-                    if found_action_plan is not None: # Plan found (list of actions)
+                    if found_action_plan is not None: 
                         num_actions = len(found_action_plan)
                         last_solved_info[f"{current_algorithm}_actions"] = num_actions
-                        last_solved_info[f"{current_algorithm}_reached_goal"] = True # Goal guaranteed
+                        last_solved_info[f"{current_algorithm}_reached_goal"] = True
 
-                        # *** Simulate plan execution for visualization ***
+             
                         print(f"Sensorless plan found: {num_actions} actions, {solve_duration:.4f}s.")
                         print("Simulating plan execution on default initial state for visualization...")
-                        # Simulate on the *first* state from the belief list, or default initial_state
                         sim_start_state = initial_belief_list_for_sensorless[0] if initial_belief_list_for_sensorless else initial_state
                         simulated_state_path = execute_plan(sim_start_state, found_action_plan)
 
-                        # Use the simulated state path for animation
-                        solution = simulated_state_path # Now solution holds states
-                        auto_solve = True # Enable animation
+                        solution = simulated_state_path 
+                        auto_solve = True 
                         step_index = 0
                         last_step_time = time.time()
-                        # *** End Simulation ***
+          
 
                         show_popup(f"Sensorless plan found!\n{num_actions} actions.\nTime: {solve_duration:.4f}s\n(Visualizing execution on one start state)", "Plan Found")
 
-                    else: # Sensorless failed
+                    else: 
                         solution = None; auto_solve = False
                         if f"{current_algorithm}_actions" in last_solved_info: del last_solved_info[f"{current_algorithm}_actions"]
                         if f"{current_algorithm}_reached_goal" in last_solved_info: del last_solved_info[f"{current_algorithm}_reached_goal"]
-                        # Check against the time limit used for this specific algorithm run
                         if solve_duration >= time_limit - 0.1: print(f"{current_algorithm} timed out"); show_popup(f"{current_algorithm} timed out after ~{time_limit}s.", "Timeout")
                         else: print(f"No plan found by {current_algorithm}"); show_popup(f"No valid plan found by {current_algorithm}.", "No Plan Found")
 
-                # --- State-Based Algorithm Handling ---
                 else:
-                    if found_solution_path and len(found_solution_path) > 0: # Path found
+                    if found_solution_path and len(found_solution_path) > 0:
                         steps = len(found_solution_path) - 1
                         final_state = found_solution_path[-1]
                         is_actually_goal = is_goal(final_state)
                         last_solved_info[f"{current_algorithm}_steps"] = steps
                         last_solved_info[f"{current_algorithm}_reached_goal"] = is_actually_goal
-                        solution = found_solution_path # Solution is the state path
-                        step_index = 0; auto_solve = True; last_step_time = time.time() # Enable animation
+                        solution = found_solution_path 
+                        step_index = 0; auto_solve = True; last_step_time = time.time() 
                         if is_actually_goal: print(f"{current_algorithm}: {steps} steps, {solve_duration:.4f}s")
                         else: print(f"{current_algorithm} finished (Not Goal): {steps} steps, {solve_duration:.4f}s"); show_popup(f"{current_algorithm} finished ({steps} steps).\nFinal state NOT goal.", "Search Complete")
-                    else: # State-based failed
+                    else: 
                         solution = None; auto_solve = False
                         if f"{current_algorithm}_steps" in last_solved_info: del last_solved_info[f"{current_algorithm}_steps"]
                         if f"{current_algorithm}_reached_goal" in last_solved_info: del last_solved_info[f"{current_algorithm}_reached_goal"]
-                        # Check against the time limit used for this specific algorithm run
                         if solve_duration >= time_limit - 0.1: print(f"{current_algorithm} timed out"); show_popup(f"{current_algorithm} timed out after ~{time_limit}s.", "Timeout")
                         else: print(f"No solution found by {current_algorithm}"); show_popup(f"No solution found by {current_algorithm}.", "No Solution")
 
-        # --- Animation Logic ---
-        # Animate if auto_solve is True AND solution is a list of states (not actions)
+   
         if auto_solve and solution and isinstance(solution, list) and len(solution) > 0 and isinstance(solution[0], list):
             current_time = time.time()
-            # Adjust animation speed based on path length
+     
             anim_delay = 0.3 if len(solution) < 30 else (0.2 if len(solution) < 60 else 0.1)
-            # anim_delay = 0.05 # Faster speed for debugging
+         
 
             if current_time - last_step_time >= anim_delay:
                 if step_index < len(solution) - 1:
                     step_index += 1
-                    current_state = copy.deepcopy(solution[step_index]) # Update displayed state
+                    current_state = copy.deepcopy(solution[step_index]) 
                     last_step_time = current_time
                 else:
-                    # Animation finished
+                  
                     auto_solve = False
                     is_final_state_goal = is_goal(current_state)
                     print(f"Animation complete: {'Goal reached!' if is_final_state_goal else 'Final state reached (Not Goal).'}")
 
 
-        # --- Drawing ---
-        # Draw the current state of the UI every frame
+
         ui_elements = draw_grid_and_ui(current_state, show_menu, current_algorithm,
                                        solve_times, last_solved_info)
 
-        # --- Frame Rate Control ---
-        clock.tick(60) # Limit FPS
 
-    # --- Cleanup ---
+        clock.tick(60) 
+
     pygame.quit()
     sys.exit()
 
-# --- Entry Point ---
 if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        # Catch unexpected errors during execution and print traceback
         print("\n--- An unexpected error occurred ---")
         traceback.print_exc()
         pygame.quit()
-        sys.exit(1) # Exit with error code
+        sys.exit(1) 
