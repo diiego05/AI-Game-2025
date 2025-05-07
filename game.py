@@ -33,8 +33,8 @@ MENU_HOVER_COLOR = (90, 90, 90)
 MENU_SELECTED_COLOR = pygame.Color('dodgerblue')
 INFO_COLOR = (50, 50, 150)
 INFO_BG = (245, 245, 245)
-POPUP_WIDTH = 450
-POPUP_HEIGHT = 250
+POPUP_WIDTH = 600
+POPUP_HEIGHT = 400
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("LamVanDi-23110191 - 8 Puzzle Solver")
@@ -43,6 +43,7 @@ pygame.display.set_caption("LamVanDi-23110191 - 8 Puzzle Solver")
 initial_state = [[-1, -1, -1], [-1, -1, -1], [-1, -1, -1]]
 goal_state = [[-1, -1, -1], [-1, -1, -1], [-1, -1, -1]]
 
+# Các hàm tiện ích từ mã gốc (giữ nguyên)
 def find_empty(state):
     """Finds the row and column of the empty tile (0)."""
     for i in range(GRID_SIZE):
@@ -158,8 +159,7 @@ def execute_plan(start_state, action_plan):
         state_sequence.append(copy.deepcopy(current_state))
     return state_sequence
 
-# --- Search Algorithms ---
-
+# Các thuật toán tìm kiếm (giữ nguyên từ mã gốc)
 def bfs(initial_state, time_limit=30):
     start_time = time.time()
     queue = deque([(initial_state, [initial_state])])
@@ -322,6 +322,29 @@ def greedy(initial_state, time_limit=30):
                 frontier.put((h, neighbor, path + [neighbor]))
     return None
 
+def ida_star(initial_state, time_limit=60):
+    start_time = time.time()
+    init_tuple = state_to_tuple(initial_state)
+    if init_tuple is None:
+        return None
+    threshold = manhattan_distance(initial_state)
+    path = [initial_state]
+    while True:
+        if time.time() - start_time >= time_limit:
+            print("IDA* Global Timeout")
+            return None
+        visited_in_iteration = {init_tuple: 0}
+        result, new_threshold = search_ida(path, 0, threshold, visited_in_iteration, start_time, time_limit)
+        if result == "Timeout":
+            print("IDA* Timeout during search")
+            return None
+        if result is not None:
+            return result
+        if new_threshold == float('inf'):
+            print("IDA*: Search exhausted")
+            return None
+        threshold = new_threshold
+
 def search_ida(path, g, threshold, visited_in_iteration, start_time, time_limit):
     current_state = path[-1]
     h = manhattan_distance(current_state)
@@ -349,88 +372,6 @@ def search_ida(path, g, threshold, visited_in_iteration, start_time, time_limit)
                 return result, threshold
             min_new_threshold = min(min_new_threshold, recursive_threshold)
     return None, min_new_threshold
-
-def ida_star(initial_state, time_limit=60):
-    start_time = time.time()
-    init_tuple = state_to_tuple(initial_state)
-    if init_tuple is None:
-        return None
-    threshold = manhattan_distance(initial_state)
-    path = [initial_state]
-    while True:
-        if time.time() - start_time >= time_limit:
-            print("IDA* Global Timeout")
-            return None
-        visited_in_iteration = {init_tuple: 0}
-        result, new_threshold = search_ida(path, 0, threshold, visited_in_iteration, start_time, time_limit)
-        if result == "Timeout":
-            print("IDA* Timeout during search")
-            return None
-        if result is not None:
-            return result
-        if new_threshold == float('inf'):
-            print("IDA*: Search exhausted")
-            return None
-        threshold = new_threshold
-
-def backtracking(initial_belief_state_list, max_depth=10, time_limit=30):
-    """
-    Backtracking algorithm for sensorless 8-Puzzle, finding an action plan for all belief states.
-    """
-    start_time = time.time()
-    initial_belief_tuples = {state_to_tuple(state) for state in initial_belief_state_list if state_to_tuple(state)}
-    if not initial_belief_tuples:
-        print("Backtracking: Initial belief state is empty or invalid.")
-        return None
-
-    initial_belief = frozenset(initial_belief_tuples)
-    goal_belief = frozenset([state_to_tuple(goal_state)])
-    actions = ['Up', 'Down', 'Left', 'Right']
-
-    def backtrack(belief, plan, depth, visited):
-        """
-        Recursive backtracking over action sequences for belief states.
-        """
-        if time.time() - start_time > time_limit:
-            print("Backtracking Timeout")
-            return None
-        if depth > max_depth:
-            return None
-        if belief == goal_belief:
-            return plan
-        belief_tuple = tuple(sorted(belief))  # Create a hashable representation
-        if belief_tuple in visited:
-            return None
-        visited.add(belief_tuple)
-
-        for action in actions:
-            next_belief_set = set()
-            valid = True
-            for state_tuple in belief:
-                state_list = tuple_to_list(state_tuple)
-                if state_list is None:
-                    valid = False
-                    break
-                next_state = apply_action_to_state(state_list, action)
-                next_tuple = state_to_tuple(next_state)
-                if next_tuple is None:
-                    valid = False
-                    break
-                next_belief_set.add(next_tuple)
-            if valid and next_belief_set:
-                next_belief = frozenset(next_belief_set)
-                result = backtrack(next_belief, plan + [action], depth + 1, visited)
-                if result is not None:
-                    return result
-        return None
-
-    visited = set()
-    result = backtrack(initial_belief, [], 0, visited)
-    if result:
-        print(f"Backtracking: Plan found with {len(result)} actions")
-    else:
-        print("Backtracking: No plan within depth limit or timeout")
-    return result
 
 def simple_hill_climbing(initial_state, time_limit=30):
     start_time = time.time()
@@ -600,41 +541,6 @@ def beam_search(initial_state, beam_width=5, time_limit=30):
         print("Beam Search: Beam empty or timeout before finding goal.")
     return best_goal_path
 
-SOLVED = "SOLVED"
-UNSOLVED = "UNSOLVED"
-MAX_AND_OR_DEPTH = 50
-
-def _and_or_recursive(state, path, solved_states, unsolved_states, start_time, time_limit, depth):
-    state_tuple = state_to_tuple(state)
-    if state_tuple is None:
-        return UNSOLVED, None
-    if time.time() - start_time > time_limit:
-        return "Timeout", None
-    if depth > MAX_AND_OR_DEPTH:
-        return UNSOLVED, None
-    if is_goal(state):
-        solved_states.add(state_tuple)
-        return SOLVED, path
-    if state_tuple in solved_states:
-        return SOLVED, path
-    if state_tuple in unsolved_states:
-        return UNSOLVED, None
-
-    unsolved_states.add(state_tuple)
-    for neighbor in get_neighbors(state):
-        neighbor_tuple = state_to_tuple(neighbor)
-        if neighbor_tuple is None or neighbor_tuple in unsolved_states:
-            continue
-        status, solution_path = _and_or_recursive(neighbor, path + [neighbor], solved_states, unsolved_states, start_time, time_limit, depth + 1)
-        if status == "Timeout":
-            return "Timeout", None
-        if status == SOLVED:
-            solved_states.add(state_tuple)
-            if state_tuple in unsolved_states:
-                unsolved_states.remove(state_tuple)
-            return SOLVED, solution_path
-    return UNSOLVED, None
-
 def and_or_search(initial_state, time_limit=30):
     start_time = time.time()
     solved_states = set()
@@ -644,7 +550,7 @@ def and_or_search(initial_state, time_limit=30):
         print("AND-OR: Invalid initial state.")
         return None
     status, solution_path = _and_or_recursive(initial_state, [initial_state], solved_states, unsolved_states, start_time, time_limit, 0)
-    if status == SOLVED:
+    if status == "SOLVED":
         print("AND-OR: Solution found.")
         return solution_path
     elif status == "Timeout":
@@ -654,82 +560,216 @@ def and_or_search(initial_state, time_limit=30):
         print("AND-OR: No solution found (exhausted/depth limit).")
         return None
 
-def sensorless_search(initial_belief_state_list, time_limit=60):
-    """Tìm kiếm trong không gian niềm tin bằng A* để tìm kế hoạch đưa tất cả trạng thái về mục tiêu."""
-    start_time = time.time()
+def _and_or_recursive(state, path, solved_states, unsolved_states, start_time, time_limit, depth):
+    state_tuple = state_to_tuple(state)
+    if state_tuple is None:
+        return "UNSOLVED", None
+    if time.time() - start_time > time_limit:
+        return "Timeout", None
+    if depth > 50:
+        return "UNSOLVED", None
+    if is_goal(state):
+        solved_states.add(state_tuple)
+        return "SOLVED", path
+    if state_tuple in solved_states:
+        return "SOLVED", path
+    if state_tuple in unsolved_states:
+        return "UNSOLVED", None
 
-    initial_belief_tuples = {state_to_tuple(state) for state in initial_belief_state_list if state_to_tuple(state)}
-    if not initial_belief_tuples:
-        print("Sensorless: Initial belief state is empty or invalid.")
-        return None
-
-    initial_belief = frozenset(initial_belief_tuples)
-    goal_belief = frozenset([state_to_tuple(goal_state)])
-
-    def heuristic(belief):
-        """Heuristic: Average Manhattan distance across belief states."""
-        if not belief:
-            return float('inf')
-        total_manhattan = 0
-        for state_tuple in belief:
-            state_list = tuple_to_list(state_tuple)
-            if state_list:
-                total_manhattan += manhattan_distance(state_list)
-        return total_manhattan / len(belief) if belief else float('inf')
-
-    frontier = PriorityQueue()
-    frontier.put((heuristic(initial_belief), 0, initial_belief, []))
-    visited = {initial_belief: 0}
-    actions = ['Up', 'Down', 'Left', 'Right']
-    nodes_expanded = 0
-
-    while not frontier.empty():
-        if time.time() - start_time > time_limit:
-            print(f"Sensorless Timeout ({time_limit}s), Nodes Expanded: {nodes_expanded}")
-            return None
-
-        f_score, g_score, belief, plan = frontier.get()
-        nodes_expanded += 1
-
-        if belief == goal_belief:
-            print(f"Sensorless: Plan found with {len(plan)} actions, Nodes Expanded: {nodes_expanded}")
-            return plan
-
-        if belief in visited and g_score > visited[belief]:
+    unsolved_states.add(state_tuple)
+    for neighbor in get_neighbors(state):
+        neighbor_tuple = state_to_tuple(neighbor)
+        if neighbor_tuple is None or neighbor_tuple in unsolved_states:
             continue
+        status, solution_path = _and_or_recursive(neighbor, path + [neighbor], solved_states, unsolved_states, start_time, time_limit, depth + 1)
+        if status == "Timeout":
+            return "Timeout", None
+        if status == "SOLVED":
+            solved_states.add(state_tuple)
+            if state_tuple in unsolved_states:
+                unsolved_states.remove(state_tuple)
+            return "SOLVED", solution_path
+    return "UNSOLVED", None
 
-        print(f"Exploring belief state with {len(belief)} states, Actions: {len(plan)}")
+def generate_random_state():
+    """Tạo một trạng thái ngẫu nhiên hợp lệ cho 8-puzzle."""
+    numbers = list(range(9))  # 0-8
+    random.shuffle(numbers)
+    state = []
+    for i in range(0, 9, 3):
+        state.append(numbers[i:i+3])
+    return state
 
-        for action in actions:
-            next_belief_set = set()
-            valid = True
-            for state_tuple in belief:
-                state_list = tuple_to_list(state_tuple)
-                if state_list is None:
-                    valid = False
-                    break
-                next_state = apply_action_to_state(state_list, action)
-                next_tuple = state_to_tuple(next_state)
-                if next_tuple is None:
-                    valid = False
-                    break
-                next_belief_set.add(next_tuple)
+def is_solvable(state):
+    """Kiểm tra xem trạng thái có thể giải được dựa trên số lần hoán vị."""
+    flat_state = [tile for row in state for tile in row if tile != 0]
+    inversions = 0
+    for i in range(len(flat_state)):
+        for j in range(i + 1, len(flat_state)):
+            if flat_state[i] > flat_state[j]:
+                inversions += 1
+    return inversions % 2 == 0
 
-            if valid and next_belief_set:
-                next_belief = frozenset(next_belief_set)
-                new_g = g_score + 1
-                if next_belief not in visited or new_g < visited[next_belief]:
-                    visited[next_belief] = new_g
-                    f = new_g + heuristic(next_belief)
-                    frontier.put((f, new_g, next_belief, plan + [action]))
+def backtracking_search(goal_state, selected_algorithm, max_attempts=100, time_limit=30):
+    """
+    Thuật toán Backtracking để tìm trạng thái đầu và giải bằng thuật toán đã chọn.
+    """
+    global initial_state
+    start_time = time.time()
+    attempts = 0
+    algo_func = None
+    time_limit_per_attempt = time_limit / max_attempts if max_attempts > 0 else time_limit
 
-    print(f"Sensorless: No plan found, Nodes Expanded: {nodes_expanded}")
-    return None
+    # Ánh xạ thuật toán
+    algo_map = {
+        'BFS': bfs,
+        'DFS': dfs,
+        'IDS': ids,
+        'UCS': ucs,
+        'A*': astar,
+        'Greedy': greedy,
+        'IDA*': ida_star,
+        'Hill Climbing': simple_hill_climbing,
+        'Steepest Hill': steepest_hill_climbing,
+        'Stochastic Hill': random_hill_climbing,
+        'SA': simulated_annealing,
+        'Beam Search': beam_search,
+        'AND-OR': and_or_search
+    }
+    algo_func = algo_map.get(selected_algorithm)
+    if not algo_func:
+        return None, f"Algorithm '{selected_algorithm}' is not supported."
+
+    while attempts < max_attempts:
+        if time.time() - start_time > time_limit:
+            return None, "Backtracking: Global timeout."
+        
+        # Tạo trạng thái đầu ngẫu nhiên
+        new_initial_state = generate_random_state()
+        if not is_solvable(new_initial_state):
+            attempts += 1
+            continue
+        
+        # Cập nhật initial_state để hiển thị
+        initial_state = copy.deepcopy(new_initial_state)
+        
+        # Thử giải với thuật toán đã chọn
+        algo_params = [new_initial_state]
+        func_params = algo_func.__code__.co_varnames[:algo_func.__code__.co_argcount]
+        if 'time_limit' in func_params:
+            algo_params.append(time_limit_per_attempt)
+        
+        try:
+            solution_path = algo_func(*algo_params)
+            if solution_path and len(solution_path) > 0 and is_goal(solution_path[-1]):
+                print(f"Backtracking: Found solution with {selected_algorithm} after {attempts + 1} attempts.")
+                return solution_path, None
+            else:
+                print(f"Backtracking: Attempt {attempts + 1} failed with {selected_algorithm}.")
+        except Exception as e:
+            print(f"Backtracking: Error in attempt {attempts + 1} with {selected_algorithm}: {str(e)}")
+        
+        attempts += 1
+    
+    return None, f"Backtracking: No solution found after {max_attempts} attempts."
+
+def algorithm_selection_popup():
+    """
+    Hiển thị popup với các nút thuật toán để chọn cho Backtracking.
+    """
+    popup_surface = pygame.Surface((POPUP_WIDTH, POPUP_HEIGHT))
+    popup_surface.fill(INFO_BG)
+    border_rect = popup_surface.get_rect()
+    pygame.draw.rect(popup_surface, INFO_COLOR, border_rect, 4, border_radius=10)
+
+    title_font = pygame.font.SysFont('Arial', 28, bold=True)
+    title_surf = title_font.render("Select Algorithm", True, INFO_COLOR)
+    title_rect = title_surf.get_rect(center=(POPUP_WIDTH // 2, 30))
+    popup_surface.blit(title_surf, title_rect)
+
+    algorithms = [
+        ('BFS', 'BFS'), ('DFS', 'DFS'), ('IDS', 'IDS'), ('UCS', 'UCS'),
+        ('A*', 'A*'), ('Greedy', 'Greedy'), ('IDA*', 'IDA*'),
+        ('Hill Climbing', 'Simple Hill'), ('Steepest Hill', 'Steepest Hill'),
+        ('Stochastic Hill', 'Stochastic Hill'), ('SA', 'Simulated Annealing'),
+        ('Beam Search', 'Beam Search'), ('AND-OR', 'AND-OR Search')
+    ]
+
+    button_width = 150
+    button_height = 40
+    button_margin = 10
+    columns = 3
+    start_x = 50
+    start_y = title_rect.bottom + 30
+    button_rects = {}
+    algo_buttons = []
+
+    for idx, (algo_id, algo_name) in enumerate(algorithms):
+        col = idx % columns
+        row = idx // columns
+        button_x = start_x + col * (button_width + button_margin)
+        button_y = start_y + row * (button_height + button_margin)
+        button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+        button_rects[algo_id] = button_rect
+        algo_buttons.append((algo_id, algo_name, button_rect))
+
+    cancel_button_rect = pygame.Rect(POPUP_WIDTH // 2 - 60, POPUP_HEIGHT - 65, 120, 40)
+    pygame.draw.rect(popup_surface, RED, cancel_button_rect, border_radius=8)
+    cancel_text_surf = BUTTON_FONT.render("Cancel", True, WHITE)
+    cancel_text_rect = cancel_text_surf.get_rect(center=cancel_button_rect.center)
+    popup_surface.blit(cancel_text_surf, cancel_text_rect)
+
+    popup_rect = popup_surface.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+    selected_algorithm = None
+    running = True
+    clock = pygame.time.Clock()
+
+    while running:
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_pos_rel = (mouse_pos[0] - popup_rect.left, mouse_pos[1] - popup_rect.top)
+
+        popup_surface.fill(INFO_BG)
+        pygame.draw.rect(popup_surface, INFO_COLOR, border_rect, 4, border_radius=10)
+        popup_surface.blit(title_surf, title_rect)
+
+        for algo_id, algo_name, button_rect in algo_buttons:
+            is_hovered = button_rect.collidepoint(mouse_pos_rel)
+            button_color = MENU_HOVER_COLOR if is_hovered else MENU_BUTTON_COLOR
+            pygame.draw.rect(popup_surface, button_color, button_rect, border_radius=8)
+            text_surf = BUTTON_FONT.render(algo_name, True, WHITE)
+            text_rect = text_surf.get_rect(center=button_rect.center)
+            popup_surface.blit(text_surf, text_rect)
+
+        pygame.draw.rect(popup_surface, RED, cancel_button_rect, border_radius=8)
+        popup_surface.blit(cancel_text_surf, cancel_text_rect)
+
+        screen.blit(popup_surface, popup_rect)
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return None
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if cancel_button_rect.collidepoint(mouse_pos_rel):
+                    return None
+                for algo_id, _, button_rect in algo_buttons:
+                    if button_rect.collidepoint(mouse_pos_rel):
+                        selected_algorithm = algo_id
+                        running = False
+                        break
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return None
+
+        clock.tick(60)
+
+    return selected_algorithm
 
 scroll_y = 0
 menu_surface = None
 total_menu_height = 0
 
+# Các hàm giao diện (giữ nguyên từ mã gốc)
 def draw_state(state, x, y, title, is_current=False, is_goal_state=False):
     title_font = BUTTON_FONT
     title_text = title_font.render(title, True, BLACK)
@@ -842,7 +882,7 @@ def draw_menu(show_menu, mouse_pos, current_algorithm):
     algorithms = [
         ('BFS', 'BFS'), ('DFS', 'DFS'), ('IDS', 'IDS'), ('UCS', 'UCS'),
         ('A*', 'A*'), ('Greedy', 'Greedy'), ('IDA*', 'IDA*'),
-        ('Backtracking', 'Backtracking'),  # Thêm dòng này
+        ('Backtracking', 'Backtracking'),
         ('Hill Climbing', 'Simple Hill'), ('Steepest Hill', 'Steepest Hill'),
         ('Stochastic Hill', 'Stochastic Hill'), ('SA', 'Simulated Annealing'),
         ('Beam Search', 'Beam Search'), ('AND-OR', 'AND-OR Search'),
@@ -1008,15 +1048,9 @@ def draw_grid_and_ui(state, show_menu, current_algorithm, solve_times, last_solv
 
 def backtracking_menu():
     """
-    Dedicated menu for Backtracking algorithm with belief states.
+    Dedicated menu for Backtracking algorithm with dynamic initial state generation.
     """
     global scroll_y, initial_state, goal_state
-
-    initial_belief_list = [
-        [[1, 2, 3], [4, 5, 0], [7, 8, 6]],
-        [[1, 2, 3], [4, 5, 6], [7, 0, 8]],
-    ]
-    belief_state_size = len(initial_belief_list)
 
     current_state = copy.deepcopy(initial_state)
     solution = None
@@ -1079,11 +1113,14 @@ def backtracking_menu():
                     if solve_button and solve_button.collidepoint(mouse_pos):
                         if not auto_solve and not solving:
                             if is_valid_state(goal_state):
-                                print("Starting Backtracking solve with belief states...")
-                                solving = True
-                                solution = None
-                                step_index = 0
-                                auto_solve = False
+                                print("Opening algorithm selection popup for Backtracking...")
+                                selected_algo = algorithm_selection_popup()
+                                if selected_algo:
+                                    print(f"Starting Backtracking with {selected_algo}...")
+                                    solving = True
+                                    solution = None
+                                    step_index = 0
+                                    auto_solve = False
                             else:
                                 show_popup("Goal state is incomplete or invalid!\nEnter all numbers 0-8.", "Invalid State")
                         clicked_handled = True
@@ -1115,21 +1152,6 @@ def backtracking_menu():
                         clicked_handled = True
 
                 if not clicked_handled:
-                    initial_grid_rect = ui_elements.get('initial_grid_rect')
-                    if initial_grid_rect and initial_grid_rect.collidepoint(mouse_pos):
-                        initial_x = initial_grid_rect.left
-                        initial_y = initial_grid_rect.top
-                        for i in range(GRID_SIZE):
-                            for j in range(GRID_SIZE):
-                                cell_x = initial_x + j * CELL_SIZE
-                                cell_y = initial_y + i * CELL_SIZE
-                                cell_rect = pygame.Rect(cell_x, cell_y, CELL_SIZE, CELL_SIZE)
-                                if cell_rect.collidepoint(mouse_pos):
-                                    selected_cell = (i, j, 'initial')
-                                    clicked_handled = True
-                                    break
-
-                if not clicked_handled:
                     goal_grid_rect = ui_elements.get('goal_grid_rect')
                     if goal_grid_rect and goal_grid_rect.collidepoint(mouse_pos):
                         goal_x = goal_grid_rect.left
@@ -1149,12 +1171,11 @@ def backtracking_menu():
                 key = event.key
                 if pygame.K_0 <= key <= pygame.K_8:
                     num = key - pygame.K_0
-                    target_state = initial_state if grid_type == 'initial' else goal_state
+                    target_state = goal_state
                     flat_state = [tile for row in target_state for tile in row if tile != -1]
                     if num not in flat_state or target_state[i][j] == num:
                         target_state[i][j] = num
-                        if grid_type == 'initial':
-                            current_state = copy.deepcopy(initial_state)
+                        current_state = copy.deepcopy(initial_state)
                     else:
                         show_popup("Each number (0-8) must be unique!", "Invalid Input")
                 selected_cell = None
@@ -1173,12 +1194,13 @@ def backtracking_menu():
             solving = False
             solve_start_time = time.time()
             error_occurred = False
-            found_action_plan = None
+            solution_path = None
+            error_msg = None
 
             try:
-                found_action_plan = backtracking(initial_belief_list, max_depth=10, time_limit=30)
+                solution_path, error_msg = backtracking_search(goal_state, selected_algo, max_attempts=100, time_limit=30)
             except Exception as e:
-                show_popup(f"Error during Backtracking solve:\n{traceback.format_exc()}", "Solver Error")
+                show_popup(f"Error during Backtracking:\n{traceback.format_exc()}", "Solver Error")
                 traceback.print_exc()
                 error_occurred = True
 
@@ -1186,35 +1208,26 @@ def backtracking_menu():
                 solve_duration = time.time() - solve_start_time
                 solve_times[current_algorithm] = solve_duration
 
-                if found_action_plan is not None:
-                    num_actions = len(found_action_plan)
-                    last_solved_info[f"{current_algorithm}_actions"] = num_actions
+                if solution_path and len(solution_path) > 0:
+                    steps = len(solution_path) - 1
+                    last_solved_info[f"{current_algorithm}_steps"] = steps
                     last_solved_info[f"{current_algorithm}_reached_goal"] = True
-
-                    print(f"Backtracking plan found: {num_actions} actions, {solve_duration:.4f}s.")
-                    print("Simulating plan execution on first belief state for visualization...")
-                    sim_start_state = initial_belief_list[0]
-                    simulated_state_path = execute_plan(sim_start_state, found_action_plan)
-
-                    solution = simulated_state_path
+                    solution = solution_path
                     auto_solve = True
                     step_index = 0
                     last_step_time = time.time()
-
-                    show_popup(f"Backtracking plan found!\n{num_actions} actions over {belief_state_size} initial states.\nTime: {solve_duration:.4f}s\n(Visualizing on one state)", "Plan Found")
+                    print(f"Backtracking: {steps} steps, {solve_duration:.4f}s")
+                    show_popup(f"Backtracking with {selected_algo} found solution!\n{steps} steps\nTime: {solve_duration:.4f}s", "Solution Found")
                 else:
                     solution = None
                     auto_solve = False
-                    if f"{current_algorithm}_actions" in last_solved_info:
-                        del last_solved_info[f"{current_algorithm}_actions"]
+                    if f"{current_algorithm}_steps" in last_solved_info:
+                        del last_solved_info[f"{current_algorithm}_steps"]
                     if f"{current_algorithm}_reached_goal" in last_solved_info:
                         del last_solved_info[f"{current_algorithm}_reached_goal"]
-                    if solve_duration >= 30 - 0.1:
-                        print("Backtracking timed out")
-                        show_popup("Backtracking timed out after ~30s.", "Timeout")
-                    else:
-                        print("No plan found by Backtracking")
-                        show_popup("No valid plan found by Backtracking.", "No Plan Found")
+                    error_message = error_msg or "Unknown error"
+                    print(f"Backtracking failed: {error_message}")
+                    show_popup(f"Backtracking failed: {error_message}", "No Solution")
 
         if auto_solve and solution and isinstance(solution, list) and len(solution) > 0 and isinstance(solution[0], list):
             current_time = time.time()
@@ -1229,9 +1242,7 @@ def backtracking_menu():
                     is_final_state_goal = is_goal(current_state)
                     print(f"Animation complete: {'Goal reached!' if is_final_state_goal else 'Final state reached (Not Goal).'}")
 
-        ui_elements = draw_grid_and_ui(current_state, show_menu, current_algorithm,
-                                       solve_times, last_solved_info,
-                                       belief_state_size)
+        ui_elements = draw_grid_and_ui(current_state, show_menu, current_algorithm, solve_times, last_solved_info)
 
         clock.tick(60)
 
