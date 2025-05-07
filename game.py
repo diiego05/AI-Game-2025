@@ -7,6 +7,7 @@ from queue import PriorityQueue
 import traceback
 import math
 import random
+import itertools
 
 # Pygame Initialization and Constants
 pygame.init()
@@ -39,13 +40,12 @@ POPUP_HEIGHT = 400
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("LamVanDi-23110191 - 8 Puzzle Solver")
 
-# Trạng thái ban đầu và đích đều trống (dùng -1 để biểu thị ô trống)
+# Trạng thái ban đầu và đích
 initial_state = [[-1, -1, -1], [-1, -1, -1], [-1, -1, -1]]
 goal_state = [[-1, -1, -1], [-1, -1, -1], [-1, -1, -1]]
 
-# Các hàm tiện ích từ mã gốc (giữ nguyên)
+# Các hàm tiện ích
 def find_empty(state):
-    """Finds the row and column of the empty tile (0)."""
     for i in range(GRID_SIZE):
         for j in range(GRID_SIZE):
             if state[i][j] == 0:
@@ -53,7 +53,6 @@ def find_empty(state):
     return -1, -1
 
 def is_goal(state):
-    """Checks if the given state is the goal state."""
     if not isinstance(state, list) or len(state) != GRID_SIZE:
         return False
     for i in range(GRID_SIZE):
@@ -62,7 +61,6 @@ def is_goal(state):
     return state == goal_state
 
 def get_neighbors(state):
-    """Generates all valid neighbor states from the current state."""
     neighbors = []
     empty_i, empty_j = find_empty(state)
     if empty_i == -1:
@@ -77,7 +75,6 @@ def get_neighbors(state):
     return neighbors
 
 def state_to_tuple(state):
-    """Converts a list-of-lists state into a hashable tuple-of-tuples."""
     if not isinstance(state, list):
         return None
     try:
@@ -87,7 +84,6 @@ def state_to_tuple(state):
         return None
 
 def tuple_to_list(state_tuple):
-    """Converts a tuple-of-tuples state back to a list-of-lists."""
     if not isinstance(state_tuple, tuple):
         return None
     try:
@@ -97,14 +93,12 @@ def tuple_to_list(state_tuple):
         return None
 
 def apply_action_to_state(state_list, action):
-    """Applies an action ('Up', 'Down', 'Left', 'Right') to a state."""
     if state_list is None:
         return None
     new_state = copy.deepcopy(state_list)
     empty_i, empty_j = find_empty(new_state)
     if empty_i == -1:
         return new_state
-
     di, dj = 0, 0
     if action == 'Up':
         di = -1
@@ -116,7 +110,6 @@ def apply_action_to_state(state_list, action):
         dj = 1
     else:
         return new_state
-
     new_i, new_j = empty_i + di, empty_j + dj
     if 0 <= new_i < GRID_SIZE and 0 <= new_j < GRID_SIZE:
         new_state[empty_i][empty_j], new_state[new_i][new_j] = new_state[new_i][new_j], new_state[empty_i][empty_j]
@@ -124,7 +117,6 @@ def apply_action_to_state(state_list, action):
     return state_list
 
 def manhattan_distance(state):
-    """Calculates the Manhattan distance heuristic."""
     distance = 0
     goal_pos = {}
     for r in range(GRID_SIZE):
@@ -141,14 +133,12 @@ def manhattan_distance(state):
     return distance
 
 def is_valid_state(state):
-    """Kiểm tra xem trạng thái có hợp lệ (chứa đủ số 0-8, không trùng lặp)."""
     flat_state = [tile for row in state for tile in row]
-    valid_numbers = set(range(9))  # {0, 1, 2, ..., 8}
+    valid_numbers = set(range(9))
     state_numbers = set(tile for tile in flat_state if tile != -1)
-    return state_numbers.issubset(valid_numbers) and len(state_numbers) == len(flat_state) and -1 not in state_numbers
+    return state_numbers.issubset(valid_numbers) and len(state_numbers) <= len(flat_state) and -1 not in state_numbers
 
 def execute_plan(start_state, action_plan):
-    """Applies a sequence of actions to a starting state and returns the state sequence."""
     if not action_plan:
         return [start_state]
     current_state = copy.deepcopy(start_state)
@@ -159,7 +149,7 @@ def execute_plan(start_state, action_plan):
         state_sequence.append(copy.deepcopy(current_state))
     return state_sequence
 
-# Các thuật toán tìm kiếm (giữ nguyên từ mã gốc)
+# Các thuật toán tìm kiếm (giữ nguyên từ mã gốc, chỉ liệt kê để tham khảo)
 def bfs(initial_state, time_limit=30):
     start_time = time.time()
     queue = deque([(initial_state, [initial_state])])
@@ -316,10 +306,11 @@ def greedy(initial_state, time_limit=30):
             return path
         for neighbor in get_neighbors(current_state):
             neighbor_tuple = state_to_tuple(neighbor)
-            if neighbor_tuple is not None and neighbor_tuple not in visited:
-                visited.add(neighbor_tuple)
-                h = manhattan_distance(neighbor)
-                frontier.put((h, neighbor, path + [neighbor]))
+            if neighbor_tuple is None or neighbor_tuple in visited:
+                continue
+            visited.add(neighbor_tuple)
+            h = manhattan_distance(neighbor)
+            frontier.put((h, neighbor, path + [neighbor]))
     return None
 
 def ida_star(initial_state, time_limit=60):
@@ -510,7 +501,6 @@ def beam_search(initial_state, beam_width=5, time_limit=30):
         return None
     visited.add(init_tuple)
     best_goal_path = None
-
     while beam:
         if time.time() - start_time > time_limit:
             print("Beam Search Timeout")
@@ -534,7 +524,6 @@ def beam_search(initial_state, beam_width=5, time_limit=30):
             break
         next_level_candidates.sort(key=lambda x: x[2])
         beam = next_level_candidates[:beam_width]
-
     if best_goal_path:
         print(f"Beam Search: Goal found len={len(best_goal_path)}")
     else:
@@ -575,7 +564,6 @@ def _and_or_recursive(state, path, solved_states, unsolved_states, start_time, t
         return "SOLVED", path
     if state_tuple in unsolved_states:
         return "UNSOLVED", None
-
     unsolved_states.add(state_tuple)
     for neighbor in get_neighbors(state):
         neighbor_tuple = state_to_tuple(neighbor)
@@ -592,8 +580,7 @@ def _and_or_recursive(state, path, solved_states, unsolved_states, start_time, t
     return "UNSOLVED", None
 
 def generate_random_state():
-    """Tạo một trạng thái ngẫu nhiên hợp lệ cho 8-puzzle."""
-    numbers = list(range(9))  # 0-8
+    numbers = list(range(9))
     random.shuffle(numbers)
     state = []
     for i in range(0, 9, 3):
@@ -601,7 +588,6 @@ def generate_random_state():
     return state
 
 def is_solvable(state):
-    """Kiểm tra xem trạng thái có thể giải được dựa trên số lần hoán vị."""
     flat_state = [tile for row in state for tile in row if tile != 0]
     inversions = 0
     for i in range(len(flat_state)):
@@ -611,54 +597,32 @@ def is_solvable(state):
     return inversions % 2 == 0
 
 def backtracking_search(goal_state, selected_algorithm, max_attempts=100, time_limit=30):
-    """
-    Thuật toán Backtracking để tìm trạng thái đầu và giải bằng thuật toán đã chọn.
-    """
     global initial_state
     start_time = time.time()
     attempts = 0
     algo_func = None
     time_limit_per_attempt = time_limit / max_attempts if max_attempts > 0 else time_limit
-
-    # Ánh xạ thuật toán
     algo_map = {
-        'BFS': bfs,
-        'DFS': dfs,
-        'IDS': ids,
-        'UCS': ucs,
-        'A*': astar,
-        'Greedy': greedy,
-        'IDA*': ida_star,
-        'Hill Climbing': simple_hill_climbing,
-        'Steepest Hill': steepest_hill_climbing,
-        'Stochastic Hill': random_hill_climbing,
-        'SA': simulated_annealing,
-        'Beam Search': beam_search,
+        'BFS': bfs, 'DFS': dfs, 'IDS': ids, 'UCS': ucs, 'A*': astar, 'Greedy': greedy,
+        'IDA*': ida_star, 'Hill Climbing': simple_hill_climbing, 'Steepest Hill': steepest_hill_climbing,
+        'Stochastic Hill': random_hill_climbing, 'SA': simulated_annealing, 'Beam Search': beam_search,
         'AND-OR': and_or_search
     }
     algo_func = algo_map.get(selected_algorithm)
     if not algo_func:
         return None, f"Algorithm '{selected_algorithm}' is not supported."
-
     while attempts < max_attempts:
         if time.time() - start_time > time_limit:
             return None, "Backtracking: Global timeout."
-        
-        # Tạo trạng thái đầu ngẫu nhiên
         new_initial_state = generate_random_state()
         if not is_solvable(new_initial_state):
             attempts += 1
             continue
-        
-        # Cập nhật initial_state để hiển thị
         initial_state = copy.deepcopy(new_initial_state)
-        
-        # Thử giải với thuật toán đã chọn
         algo_params = [new_initial_state]
         func_params = algo_func.__code__.co_varnames[:algo_func.__code__.co_argcount]
         if 'time_limit' in func_params:
             algo_params.append(time_limit_per_attempt)
-        
         try:
             solution_path = algo_func(*algo_params)
             if solution_path and len(solution_path) > 0 and is_goal(solution_path[-1]):
@@ -668,25 +632,105 @@ def backtracking_search(goal_state, selected_algorithm, max_attempts=100, time_l
                 print(f"Backtracking: Attempt {attempts + 1} failed with {selected_algorithm}.")
         except Exception as e:
             print(f"Backtracking: Error in attempt {attempts + 1} with {selected_algorithm}: {str(e)}")
-        
         attempts += 1
-    
     return None, f"Backtracking: No solution found after {max_attempts} attempts."
 
+def generate_belief_states(partial_state):
+    """
+    Tạo tất cả các trạng thái có thể từ trạng thái đầu không đầy đủ.
+    Các ô có giá trị -1 sẽ được thay bằng các số còn thiếu.
+    """
+    flat_state = [tile for row in partial_state for tile in row]
+    used_numbers = [tile for tile in flat_state if tile != -1]
+    missing_numbers = [i for i in range(9) if i not in used_numbers]
+    unknown_positions = [i for i, tile in enumerate(flat_state) if tile == -1]
+    
+    belief_states = []
+    for perm in itertools.permutations(missing_numbers, len(unknown_positions)):
+        new_state = flat_state.copy()
+        for pos, num in zip(unknown_positions, perm):
+            new_state[pos] = num
+        state_2d = [new_state[i:i+3] for i in range(0, 9, 3)]
+        if is_solvable(state_2d):
+            belief_states.append(state_2d)
+    
+    return belief_states
+
+def is_belief_state_goal(belief_states):
+    """
+    Kiểm tra xem tất cả các trạng thái trong belief states có khớp với goal_state không.
+    Với các ô -1 trong goal_state, bỏ qua kiểm tra tại vị trí đó.
+    """
+    for state in belief_states:
+        for i in range(GRID_SIZE):
+            for j in range(GRID_SIZE):
+                if goal_state[i][j] != -1 and state[i][j] != goal_state[i][j]:
+                    return False
+    return True
+
+def apply_action_to_belief_states(belief_states, action):
+    """
+    Áp dụng một hành động cho tất cả các trạng thái trong belief states.
+    """
+    new_belief_states = []
+    seen_tuples = set()
+    for state in belief_states:
+        new_state = apply_action_to_state(state, action)
+        if new_state:
+            state_tuple = state_to_tuple(new_state)
+            if state_tuple and state_tuple not in seen_tuples:
+                new_belief_states.append(new_state)
+                seen_tuples.add(state_tuple)
+    return new_belief_states
+
+def sensorless_search(initial_state, time_limit=60):
+    """
+    Thuật toán Sensorless Search cho 8-puzzle với trạng thái đầu không đầy đủ.
+    Tìm một chuỗi hành động cố định dẫn tất cả trạng thái trong belief states đến goal_state.
+    """
+    start_time = time.time()
+    belief_states = generate_belief_states(initial_state)
+    if not belief_states:
+        print("Sensorless: No valid belief states generated.")
+        return None
+    
+    queue = deque([([], belief_states)])
+    visited = set()
+    actions = ['Up', 'Down', 'Left', 'Right']
+    
+    while queue:
+        if time.time() - start_time > time_limit:
+            print("Sensorless Search Timeout")
+            return None
+        
+        action_plan, current_belief_states = queue.popleft()
+        belief_tuple = tuple(sorted([state_to_tuple(state) for state in current_belief_states if state_to_tuple(state)]))
+        if belief_tuple in visited:
+            continue
+        visited.add(belief_tuple)
+        
+        if is_belief_state_goal(current_belief_states):
+            print(f"Sensorless: Found plan with {len(action_plan)} actions.")
+            return action_plan
+        
+        for action in actions:
+            new_belief_states = apply_action_to_belief_states(current_belief_states, action)
+            if new_belief_states:
+                new_plan = action_plan + [action]
+                queue.append((new_plan, new_belief_states))
+    
+    print("Sensorless: No plan found.")
+    return None
+
 def algorithm_selection_popup():
-    """
-    Hiển thị popup với các nút thuật toán để chọn cho Backtracking.
-    """
     popup_surface = pygame.Surface((POPUP_WIDTH, POPUP_HEIGHT))
     popup_surface.fill(INFO_BG)
     border_rect = popup_surface.get_rect()
     pygame.draw.rect(popup_surface, INFO_COLOR, border_rect, 4, border_radius=10)
-
     title_font = pygame.font.SysFont('Arial', 28, bold=True)
     title_surf = title_font.render("Select Algorithm", True, INFO_COLOR)
     title_rect = title_surf.get_rect(center=(POPUP_WIDTH // 2, 30))
     popup_surface.blit(title_surf, title_rect)
-
     algorithms = [
         ('BFS', 'BFS'), ('DFS', 'DFS'), ('IDS', 'IDS'), ('UCS', 'UCS'),
         ('A*', 'A*'), ('Greedy', 'Greedy'), ('IDA*', 'IDA*'),
@@ -694,7 +738,6 @@ def algorithm_selection_popup():
         ('Stochastic Hill', 'Stochastic Hill'), ('SA', 'Simulated Annealing'),
         ('Beam Search', 'Beam Search'), ('AND-OR', 'AND-OR Search')
     ]
-
     button_width = 150
     button_height = 40
     button_margin = 10
@@ -703,7 +746,6 @@ def algorithm_selection_popup():
     start_y = title_rect.bottom + 30
     button_rects = {}
     algo_buttons = []
-
     for idx, (algo_id, algo_name) in enumerate(algorithms):
         col = idx % columns
         row = idx // columns
@@ -712,26 +754,21 @@ def algorithm_selection_popup():
         button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
         button_rects[algo_id] = button_rect
         algo_buttons.append((algo_id, algo_name, button_rect))
-
     cancel_button_rect = pygame.Rect(POPUP_WIDTH // 2 - 60, POPUP_HEIGHT - 65, 120, 40)
     pygame.draw.rect(popup_surface, RED, cancel_button_rect, border_radius=8)
     cancel_text_surf = BUTTON_FONT.render("Cancel", True, WHITE)
     cancel_text_rect = cancel_text_surf.get_rect(center=cancel_button_rect.center)
     popup_surface.blit(cancel_text_surf, cancel_text_rect)
-
     popup_rect = popup_surface.get_rect(center=(WIDTH // 2, HEIGHT // 2))
     selected_algorithm = None
     running = True
     clock = pygame.time.Clock()
-
     while running:
         mouse_pos = pygame.mouse.get_pos()
         mouse_pos_rel = (mouse_pos[0] - popup_rect.left, mouse_pos[1] - popup_rect.top)
-
         popup_surface.fill(INFO_BG)
         pygame.draw.rect(popup_surface, INFO_COLOR, border_rect, 4, border_radius=10)
         popup_surface.blit(title_surf, title_rect)
-
         for algo_id, algo_name, button_rect in algo_buttons:
             is_hovered = button_rect.collidepoint(mouse_pos_rel)
             button_color = MENU_HOVER_COLOR if is_hovered else MENU_BUTTON_COLOR
@@ -739,13 +776,10 @@ def algorithm_selection_popup():
             text_surf = BUTTON_FONT.render(algo_name, True, WHITE)
             text_rect = text_surf.get_rect(center=button_rect.center)
             popup_surface.blit(text_surf, text_rect)
-
         pygame.draw.rect(popup_surface, RED, cancel_button_rect, border_radius=8)
         popup_surface.blit(cancel_text_surf, cancel_text_rect)
-
         screen.blit(popup_surface, popup_rect)
         pygame.display.flip()
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return None
@@ -760,16 +794,13 @@ def algorithm_selection_popup():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     return None
-
         clock.tick(60)
-
     return selected_algorithm
 
 scroll_y = 0
 menu_surface = None
 total_menu_height = 0
 
-# Các hàm giao diện (giữ nguyên từ mã gốc)
 def draw_state(state, x, y, title, is_current=False, is_goal_state=False):
     title_font = BUTTON_FONT
     title_text = title_font.render(title, True, BLACK)
@@ -783,7 +814,7 @@ def draw_state(state, x, y, title, is_current=False, is_goal_state=False):
             cell_y = y + i * CELL_SIZE
             cell_rect = pygame.Rect(cell_x, cell_y, CELL_SIZE, CELL_SIZE)
             tile = state[i][j]
-            if tile != -1 and tile != 0:  # Ô có số (không trống và không phải 0)
+            if tile != -1 and tile != 0:
                 color = GREEN if is_goal_state or (is_current and is_goal(state)) else BLUE
                 pygame.draw.rect(screen, color, cell_rect.inflate(-6, -6), border_radius=8)
                 number = FONT.render(str(tile), True, WHITE)
@@ -793,7 +824,6 @@ def draw_state(state, x, y, title, is_current=False, is_goal_state=False):
             pygame.draw.rect(screen, BLACK, cell_rect, 1)
 
 def show_popup(message, title="Info"):
-    """Displays a modal popup message box with word wrap."""
     popup_surface = pygame.Surface((POPUP_WIDTH, POPUP_HEIGHT))
     popup_surface.fill(INFO_BG)
     border_rect = popup_surface.get_rect()
@@ -802,7 +832,6 @@ def show_popup(message, title="Info"):
     title_surf = title_font.render(title, True, INFO_COLOR)
     title_rect = title_surf.get_rect(center=(POPUP_WIDTH // 2, 30))
     popup_surface.blit(title_surf, title_rect)
-
     words = message.split(' ')
     lines = []
     current_line = ""
@@ -832,7 +861,6 @@ def show_popup(message, title="Info"):
                 lines.append(current_line)
                 current_line = word
     lines.append(current_line)
-
     line_height = INFO_FONT.get_linesize() if INFO_FONT else 20
     start_y = title_rect.bottom + 20
     for i, line in enumerate(lines):
@@ -840,14 +868,12 @@ def show_popup(message, title="Info"):
             text_surf = INFO_FONT.render(line, True, BLACK)
             text_rect = text_surf.get_rect(center=(POPUP_WIDTH // 2, start_y + i * line_height))
             popup_surface.blit(text_surf, text_rect)
-
     ok_button_rect = pygame.Rect(POPUP_WIDTH // 2 - 60, POPUP_HEIGHT - 65, 120, 40)
     pygame.draw.rect(popup_surface, INFO_COLOR, ok_button_rect, border_radius=8)
     ok_text_surf = BUTTON_FONT.render("OK", True, WHITE) if BUTTON_FONT else None
     if ok_text_surf:
         ok_text_rect = ok_text_surf.get_rect(center=ok_button_rect.center)
         popup_surface.blit(ok_text_surf, ok_text_rect)
-
     popup_rect = popup_surface.get_rect(center=(WIDTH // 2, HEIGHT // 2))
     screen.blit(popup_surface, popup_rect)
     pygame.display.flip()
@@ -890,12 +916,10 @@ def draw_menu(show_menu, mouse_pos, current_algorithm):
     ]
     button_height, padding, button_margin = 55, 10, 8
     total_menu_height = (len(algorithms) * (button_height + button_margin)) - button_margin + (2 * padding)
-
     display_height = max(total_menu_height, HEIGHT)
     if menu_surface is None or menu_surface.get_height() != display_height:
         menu_surface = pygame.Surface((MENU_WIDTH, display_height))
     menu_surface.fill(MENU_COLOR)
-
     buttons_dict = {}
     y_position = padding
     mouse_x_rel, mouse_y_rel = mouse_pos[0], mouse_pos[1] + scroll_y
@@ -909,20 +933,16 @@ def draw_menu(show_menu, mouse_pos, current_algorithm):
         menu_surface.blit(text, text.get_rect(center=button_rect_local.center))
         buttons_dict[algo_id] = button_rect_local
         y_position += button_height + button_margin
-
     visible_menu_area = pygame.Rect(0, scroll_y, MENU_WIDTH, HEIGHT)
     screen.blit(menu_surface, (0, 0), visible_menu_area)
-
     close_button_rect = pygame.Rect(MENU_WIDTH - 40, 10, 30, 30)
     pygame.draw.rect(screen, RED, close_button_rect, border_radius=5)
     cx, cy = close_button_rect.center
     pygame.draw.line(screen, WHITE, (cx - 7, cy - 7), (cx + 7, cy + 7), 3)
     pygame.draw.line(screen, WHITE, (cx - 7, cy + 7), (cx + 7, cy - 7), 3)
-
     menu_elements['close_button'] = close_button_rect
     menu_elements['buttons'] = buttons_dict
     menu_elements['menu_area'] = pygame.Rect(0, 0, MENU_WIDTH, HEIGHT)
-
     if total_menu_height > HEIGHT:
         scrollbar_height = max(20, HEIGHT * (HEIGHT / total_menu_height))
         scrollbar_max_y = HEIGHT - scrollbar_height
@@ -930,24 +950,20 @@ def draw_menu(show_menu, mouse_pos, current_algorithm):
         scrollbar_y = scroll_ratio * scrollbar_max_y
         scrollbar_rect = pygame.Rect(MENU_WIDTH - 8, scrollbar_y, 6, scrollbar_height)
         pygame.draw.rect(screen, GRAY, scrollbar_rect, border_radius=3)
-
     return menu_elements
 
 def draw_grid_and_ui(state, show_menu, current_algorithm, solve_times, last_solved_info, belief_state_size=None):
-    """Draws the entire UI including grids, buttons, info panel, and menu."""
     screen.fill(WHITE)
     mouse_pos = pygame.mouse.get_pos()
     main_area_x = MENU_WIDTH if show_menu else 0
     main_area_width = WIDTH - main_area_x
     center_x_main = main_area_x + main_area_width // 2
-
     top_row_y = GRID_PADDING + 40
     grid_spacing_top = GRID_PADDING * 1.5
     total_width_top = 2 * GRID_DISPLAY_WIDTH + grid_spacing_top
     start_x_top = center_x_main - total_width_top // 2
     initial_x = start_x_top
     goal_x = start_x_top + GRID_DISPLAY_WIDTH + grid_spacing_top
-
     bottom_row_y = top_row_y + GRID_DISPLAY_WIDTH + GRID_PADDING + 60
     button_width, button_height = 130, 45
     button_x = main_area_x + GRID_PADDING
@@ -955,19 +971,18 @@ def draw_grid_and_ui(state, show_menu, current_algorithm, solve_times, last_solv
     solve_button_y = button_mid_y - button_height - 8
     reset_solution_button_y = button_mid_y + 8
     reset_all_button_y = button_mid_y + button_height + 16
+    reset_initial_button_y = reset_all_button_y + button_height + 8
     solve_button_rect = pygame.Rect(button_x, solve_button_y, button_width, button_height)
     reset_solution_button_rect = pygame.Rect(button_x, reset_solution_button_y, button_width, button_height)
     reset_all_button_rect = pygame.Rect(button_x, reset_all_button_y, button_width, button_height)
-
+    reset_initial_button_rect = pygame.Rect(button_x, reset_initial_button_y, button_width, button_height)
     current_state_x = button_x + button_width + GRID_PADDING * 1.5
     current_state_y = bottom_row_y
-
     info_area_x = current_state_x + GRID_DISPLAY_WIDTH + GRID_PADDING * 1.5
     info_area_y = bottom_row_y
     info_area_width = max(150, main_area_x + main_area_width - info_area_x - GRID_PADDING)
     info_area_height = GRID_DISPLAY_WIDTH
     info_area_rect = pygame.Rect(info_area_x, info_area_y, info_area_width, info_area_height)
-
     draw_state(initial_state, initial_x, top_row_y, "Initial State")
     draw_state(goal_state, goal_x, top_row_y, "Goal State", is_goal_state=True)
     if current_algorithm not in ['Sensorless', 'Backtracking'] or belief_state_size is None:
@@ -975,7 +990,6 @@ def draw_grid_and_ui(state, show_menu, current_algorithm, solve_times, last_solv
     else:
         belief_text = f"Belief States: {belief_state_size}"
         draw_state(state, current_state_x, current_state_y, belief_text, is_current=True)
-
     pygame.draw.rect(screen, RED, solve_button_rect, border_radius=5)
     solve_text = BUTTON_FONT.render("SOLVE", True, WHITE)
     screen.blit(solve_text, solve_text.get_rect(center=solve_button_rect.center))
@@ -985,25 +999,24 @@ def draw_grid_and_ui(state, show_menu, current_algorithm, solve_times, last_solv
     pygame.draw.rect(screen, BLUE, reset_all_button_rect, border_radius=5)
     reset_all_text = BUTTON_FONT.render("Reset All", True, WHITE)
     screen.blit(reset_all_text, reset_all_text.get_rect(center=reset_all_button_rect.center))
-
+    pygame.draw.rect(screen, BLUE, reset_initial_button_rect, border_radius=5)
+    reset_initial_text = BUTTON_FONT.render("Reset Initial", True, WHITE)
+    screen.blit(reset_initial_text, reset_initial_text.get_rect(center=reset_initial_button_rect.center))
     pygame.draw.rect(screen, INFO_BG, info_area_rect, border_radius=8)
     pygame.draw.rect(screen, GRAY, info_area_rect, 2, border_radius=8)
     info_pad_x, info_pad_y = 15, 10
     line_height = INFO_FONT.get_linesize() + 4
     current_info_y = info_area_y + info_pad_y
-
     compare_title_surf = TITLE_FONT.render("Comparison", True, BLACK)
     compare_title_x = info_area_rect.centerx - compare_title_surf.get_width() // 2
     screen.blit(compare_title_surf, (compare_title_x, current_info_y))
     current_info_y += compare_title_surf.get_height() + 8
-
     if solve_times:
         sorted_times = sorted(solve_times.items(), key=lambda item: item[1])
         for algo, time_val in sorted_times:
             steps_val = last_solved_info.get(f"{algo}_steps")
             actions_val = last_solved_info.get(f"{algo}_actions")
             reached_goal = last_solved_info.get(f"{algo}_reached_goal")
-
             base_str = f"{algo}: {time_val:.3f}s"
             count_str = ""
             if steps_val is not None:
@@ -1015,7 +1028,6 @@ def draw_grid_and_ui(state, show_menu, current_algorithm, solve_times, last_solv
             goal_str = " (Not Goal)" if reached_goal is False else ""
             comp_str = base_str + count_str + goal_str
             comp_surf = INFO_FONT.render(comp_str, True, BLACK)
-
             text_fits = info_area_x + info_pad_x + comp_surf.get_width() < info_area_x + info_area_width - info_pad_x / 2
             if current_info_y + line_height < info_area_y + info_area_height - info_pad_y:
                 if text_fits:
@@ -1033,25 +1045,20 @@ def draw_grid_and_ui(state, show_menu, current_algorithm, solve_times, last_solv
     else:
         no_comp_surf = INFO_FONT.render("(No results yet)", True, GRAY)
         screen.blit(no_comp_surf, (info_area_x + info_pad_x, current_info_y))
-
     menu_elements = draw_menu(show_menu, mouse_pos, current_algorithm)
     pygame.display.flip()
-
     return {
         'solve_button': solve_button_rect,
         'reset_solution_button': reset_solution_button_rect,
         'reset_all_button': reset_all_button_rect,
+        'reset_initial_button': reset_initial_button_rect,
         'menu': menu_elements,
         'initial_grid_rect': pygame.Rect(initial_x, top_row_y, GRID_DISPLAY_WIDTH, GRID_DISPLAY_WIDTH),
         'goal_grid_rect': pygame.Rect(goal_x, top_row_y, GRID_DISPLAY_WIDTH, GRID_DISPLAY_WIDTH)
     }
 
 def backtracking_menu():
-    """
-    Dedicated menu for Backtracking algorithm with dynamic initial state generation.
-    """
     global scroll_y, initial_state, goal_state
-
     current_state = copy.deepcopy(initial_state)
     solution = None
     step_index = 0
@@ -1063,22 +1070,17 @@ def backtracking_menu():
     solve_times = {}
     last_solved_info = {}
     selected_cell = None
-
     clock = pygame.time.Clock()
     ui_elements = {}
     running = True
-
     while running:
         mouse_pos = pygame.mouse.get_pos()
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
                 break
-
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 clicked_handled = False
-
                 if show_menu and not clicked_handled:
                     menu_data = ui_elements.get('menu', {})
                     menu_area = menu_data.get('menu_area')
@@ -1099,7 +1101,6 @@ def backtracking_menu():
                                     break
                         if not clicked_handled:
                             clicked_handled = True
-
                 if not show_menu and not clicked_handled:
                     menu_data = ui_elements.get('menu', {})
                     open_button = menu_data.get('open_button')
@@ -1107,7 +1108,6 @@ def backtracking_menu():
                         show_menu = True
                         scroll_y = 0
                         clicked_handled = True
-
                 if not clicked_handled:
                     solve_button = ui_elements.get('solve_button')
                     if solve_button and solve_button.collidepoint(mouse_pos):
@@ -1124,7 +1124,6 @@ def backtracking_menu():
                             else:
                                 show_popup("Goal state is incomplete or invalid!\nEnter all numbers 0-8.", "Invalid State")
                         clicked_handled = True
-
                 if not clicked_handled:
                     reset_solution_button = ui_elements.get('reset_solution_button')
                     if reset_solution_button and reset_solution_button.collidepoint(mouse_pos):
@@ -1136,7 +1135,6 @@ def backtracking_menu():
                         auto_solve = False
                         selected_cell = None
                         clicked_handled = True
-
                 if not clicked_handled:
                     reset_all_button = ui_elements.get('reset_all_button')
                     if reset_all_button and reset_all_button.collidepoint(mouse_pos):
@@ -1150,7 +1148,18 @@ def backtracking_menu():
                         auto_solve = False
                         selected_cell = None
                         clicked_handled = True
-
+                if not clicked_handled:
+                    reset_initial_button = ui_elements.get('reset_initial_button')
+                    if reset_initial_button and reset_initial_button.collidepoint(mouse_pos):
+                        print("Resetting initial state.")
+                        initial_state = [[-1, -1, -1], [-1, -1, -1], [-1, -1, -1]]
+                        current_state = copy.deepcopy(initial_state)
+                        solution = None
+                        step_index = 0
+                        solving = False
+                        auto_solve = False
+                        selected_cell = None
+                        clicked_handled = True
                 if not clicked_handled:
                     goal_grid_rect = ui_elements.get('goal_grid_rect')
                     if goal_grid_rect and goal_grid_rect.collidepoint(mouse_pos):
@@ -1165,7 +1174,6 @@ def backtracking_menu():
                                     selected_cell = (i, j, 'goal')
                                     clicked_handled = True
                                     break
-
             if event.type == pygame.KEYDOWN and selected_cell:
                 i, j, grid_type = selected_cell
                 key = event.key
@@ -1179,35 +1187,29 @@ def backtracking_menu():
                     else:
                         show_popup("Each number (0-8) must be unique!", "Invalid Input")
                 selected_cell = None
-
             if event.type == pygame.MOUSEWHEEL and show_menu:
                 menu_area = ui_elements.get('menu', {}).get('menu_area')
                 if menu_area and menu_area.collidepoint(mouse_pos) and total_menu_height > HEIGHT:
                     scroll_amount = event.y * 35
                     max_scroll = max(0, total_menu_height - HEIGHT)
                     scroll_y = max(0, min(scroll_y - scroll_amount, max_scroll))
-
         if not running:
             break
-
         if solving:
             solving = False
             solve_start_time = time.time()
             error_occurred = False
             solution_path = None
             error_msg = None
-
             try:
                 solution_path, error_msg = backtracking_search(goal_state, selected_algo, max_attempts=100, time_limit=30)
             except Exception as e:
                 show_popup(f"Error during Backtracking:\n{traceback.format_exc()}", "Solver Error")
                 traceback.print_exc()
                 error_occurred = True
-
             if not error_occurred:
                 solve_duration = time.time() - solve_start_time
                 solve_times[current_algorithm] = solve_duration
-
                 if solution_path and len(solution_path) > 0:
                     steps = len(solution_path) - 1
                     last_solved_info[f"{current_algorithm}_steps"] = steps
@@ -1228,7 +1230,6 @@ def backtracking_menu():
                     error_message = error_msg or "Unknown error"
                     print(f"Backtracking failed: {error_message}")
                     show_popup(f"Backtracking failed: {error_message}", "No Solution")
-
         if auto_solve and solution and isinstance(solution, list) and len(solution) > 0 and isinstance(solution[0], list):
             current_time = time.time()
             anim_delay = 0.3 if len(solution) < 30 else (0.2 if len(solution) < 60 else 0.1)
@@ -1241,22 +1242,12 @@ def backtracking_menu():
                     auto_solve = False
                     is_final_state_goal = is_goal(current_state)
                     print(f"Animation complete: {'Goal reached!' if is_final_state_goal else 'Final state reached (Not Goal).'}")
-
         ui_elements = draw_grid_and_ui(current_state, show_menu, current_algorithm, solve_times, last_solved_info)
-
         clock.tick(60)
-
     return None
 
 def main():
     global scroll_y, initial_state, goal_state
-
-    initial_belief_list_for_sensorless = [
-        [[1, 2, 3], [4, 5, 0], [7, 8, 6]],
-        [[1, 2, 3], [4, 5, 6], [7, 0, 8]],
-    ]
-    belief_state_size = len(initial_belief_list_for_sensorless)
-
     current_state = copy.deepcopy(initial_state)
     solution = None
     step_index = 0
@@ -1268,22 +1259,17 @@ def main():
     solve_times = {}
     last_solved_info = {}
     selected_cell = None
-
     clock = pygame.time.Clock()
     ui_elements = {}
     running = True
-
     while running:
         mouse_pos = pygame.mouse.get_pos()
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
                 break
-
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 clicked_handled = False
-
                 if show_menu and not clicked_handled:
                     menu_data = ui_elements.get('menu', {})
                     menu_area = menu_data.get('menu_area')
@@ -1316,7 +1302,6 @@ def main():
                                     break
                         if not clicked_handled:
                             clicked_handled = True
-
                 if not show_menu and not clicked_handled:
                     menu_data = ui_elements.get('menu', {})
                     open_button = menu_data.get('open_button')
@@ -1324,21 +1309,19 @@ def main():
                         show_menu = True
                         scroll_y = 0
                         clicked_handled = True
-
                 if not clicked_handled:
                     solve_button = ui_elements.get('solve_button')
                     if solve_button and solve_button.collidepoint(mouse_pos):
                         if not auto_solve and not solving:
-                            if is_valid_state(initial_state) and is_valid_state(goal_state):
+                            if current_algorithm != 'Sensorless' and (not is_valid_state(initial_state) or not is_valid_state(goal_state)):
+                                show_popup("Initial or Goal state is incomplete or invalid!\nEnter all numbers 0-8.", "Invalid State")
+                            else:
                                 print(f"Starting solve with {current_algorithm}...")
                                 solving = True
                                 solution = None
                                 step_index = 0
                                 auto_solve = False
-                            else:
-                                show_popup("Initial or Goal state is incomplete or invalid!\nEnter all numbers 0-8.", "Invalid State")
                         clicked_handled = True
-
                 if not clicked_handled:
                     reset_solution_button = ui_elements.get('reset_solution_button')
                     if reset_solution_button and reset_solution_button.collidepoint(mouse_pos):
@@ -1350,7 +1333,6 @@ def main():
                         auto_solve = False
                         selected_cell = None
                         clicked_handled = True
-
                 if not clicked_handled:
                     reset_all_button = ui_elements.get('reset_all_button')
                     if reset_all_button and reset_all_button.collidepoint(mouse_pos):
@@ -1364,7 +1346,18 @@ def main():
                         auto_solve = False
                         selected_cell = None
                         clicked_handled = True
-
+                if not clicked_handled:
+                    reset_initial_button = ui_elements.get('reset_initial_button')
+                    if reset_initial_button and reset_initial_button.collidepoint(mouse_pos):
+                        print("Resetting initial state.")
+                        initial_state = [[-1, -1, -1], [-1, -1, -1], [-1, -1, -1]]
+                        current_state = copy.deepcopy(initial_state)
+                        solution = None
+                        step_index = 0
+                        solving = False
+                        auto_solve = False
+                        selected_cell = None
+                        clicked_handled = True
                 if not clicked_handled:
                     initial_grid_rect = ui_elements.get('initial_grid_rect')
                     if initial_grid_rect and initial_grid_rect.collidepoint(mouse_pos):
@@ -1379,7 +1372,6 @@ def main():
                                     selected_cell = (i, j, 'initial')
                                     clicked_handled = True
                                     break
-
                 if not clicked_handled:
                     goal_grid_rect = ui_elements.get('goal_grid_rect')
                     if goal_grid_rect and goal_grid_rect.collidepoint(mouse_pos):
@@ -1394,7 +1386,6 @@ def main():
                                     selected_cell = (i, j, 'goal')
                                     clicked_handled = True
                                     break
-
             if event.type == pygame.KEYDOWN and selected_cell:
                 i, j, grid_type = selected_cell
                 key = event.key
@@ -1409,17 +1400,14 @@ def main():
                     else:
                         show_popup("Each number (0-8) must be unique!", "Invalid Input")
                 selected_cell = None
-
             if event.type == pygame.MOUSEWHEEL and show_menu:
                 menu_area = ui_elements.get('menu', {}).get('menu_area')
                 if menu_area and menu_area.collidepoint(mouse_pos) and total_menu_height > HEIGHT:
                     scroll_amount = event.y * 35
                     max_scroll = max(0, total_menu_height - HEIGHT)
                     scroll_y = max(0, min(scroll_y - scroll_amount, max_scroll))
-
         if not running:
             break
-
         if solving:
             solving = False
             solve_start_time = time.time()
@@ -1430,7 +1418,6 @@ def main():
             algo_func = None
             algo_args = []
             time_limit = 30
-
             try:
                 state_to_solve = copy.deepcopy(current_state)
                 if current_algorithm == 'BFS':
@@ -1475,48 +1462,42 @@ def main():
                     algo_args = [state_to_solve]
                 elif current_algorithm == 'Sensorless':
                     algo_func = sensorless_search
-                    algo_args = [initial_belief_list_for_sensorless]
+                    algo_args = [initial_state]
                     time_limit = 60
                 else:
                     show_popup(f"Algorithm '{current_algorithm}' is not implemented.", "Error")
                     error_occurred = True
-
                 if algo_func and not error_occurred:
                     func_params = algo_func.__code__.co_varnames[:algo_func.__code__.co_argcount]
                     if 'time_limit' in func_params:
                         algo_args.append(time_limit)
-
                     if is_sensorless_algo:
                         found_action_plan = algo_func(*algo_args)
                     else:
                         found_solution_path = algo_func(*algo_args)
-
             except Exception as e:
                 show_popup(f"Error during {current_algorithm} solve:\n{traceback.format_exc()}", "Solver Error")
                 traceback.print_exc()
                 error_occurred = True
-
             if not error_occurred:
                 solve_duration = time.time() - solve_start_time
                 solve_times[current_algorithm] = solve_duration
-
                 if is_sensorless_algo:
+                    belief_states = generate_belief_states(initial_state)
+                    belief_state_size = len(belief_states) if belief_states else 0
                     if found_action_plan is not None:
                         num_actions = len(found_action_plan)
                         last_solved_info[f"{current_algorithm}_actions"] = num_actions
                         last_solved_info[f"{current_algorithm}_reached_goal"] = True
-
                         print(f"Sensorless plan found: {num_actions} actions, {solve_duration:.4f}s.")
-                        print("Simulating plan execution on first belief state for visualization...")
-                        sim_start_state = initial_belief_list_for_sensorless[0]
+                        print("Simulating plan execution on a sample state for visualization...")
+                        sim_start_state = belief_states[0] if belief_states else initial_state
                         simulated_state_path = execute_plan(sim_start_state, found_action_plan)
-
                         solution = simulated_state_path
                         auto_solve = True
                         step_index = 0
                         last_step_time = time.time()
-
-                        show_popup(f"Sensorless plan found!\n{num_actions} actions over {belief_state_size} initial states.\nTime: {solve_duration:.4f}s\n(Visualizing on one state)", "Plan Found")
+                        show_popup(f"Sensorless plan found!\n{num_actions} actions over {belief_state_size} belief states.\nTime: {solve_duration:.4f}s\n(Visualizing on one state)", "Plan Found")
                     else:
                         solution = None
                         auto_solve = False
@@ -1559,7 +1540,6 @@ def main():
                         else:
                             print(f"No solution found by {current_algorithm}")
                             show_popup(f"No solution found by {current_algorithm}.", "No Solution")
-
         if auto_solve and solution and isinstance(solution, list) and len(solution) > 0 and isinstance(solution[0], list):
             current_time = time.time()
             anim_delay = 0.3 if len(solution) < 30 else (0.2 if len(solution) < 60 else 0.1)
@@ -1572,13 +1552,10 @@ def main():
                     auto_solve = False
                     is_final_state_goal = is_goal(current_state)
                     print(f"Animation complete: {'Goal reached!' if is_final_state_goal else 'Final state reached (Not Goal).'}")
-
+        belief_state_size = len(generate_belief_states(initial_state)) if current_algorithm == 'Sensorless' else None
         ui_elements = draw_grid_and_ui(current_state, show_menu, current_algorithm,
-                                       solve_times, last_solved_info,
-                                       belief_state_size if current_algorithm == 'Sensorless' else None)
-
+                                       solve_times, last_solved_info, belief_state_size)
         clock.tick(60)
-
     pygame.quit()
     sys.exit()
 
