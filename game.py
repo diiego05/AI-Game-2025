@@ -55,36 +55,27 @@ def find_empty(state):
             if state[i][j] == 0:
                 return i, j
     return -1, -1
+
 def is_goal(state):
-    
     if not isinstance(state, list) or len(state) != GRID_SIZE:
-        print(f"Invalid state format: {state}")
         return False
     for i in range(GRID_SIZE):
         if not isinstance(state[i], list) or len(state[i]) != GRID_SIZE:
-            print(f"Invalid row {i} in state: {state[i]}")
             return False
-    if state == goal_state:
-        print(f"Goal state reached: {state}")
-    else:
-        print(f"State {state} is not goal: {goal_state}")
     return state == goal_state
 
 def get_neighbors(state):
-    
     neighbors = []
     empty_i, empty_j = find_empty(state)
     if empty_i == -1:
-        print(f"No empty tile found in state: {state}")
         return []
-    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Lên, xuống, trái, phải
+    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
     for di, dj in directions:
         new_i, new_j = empty_i + di, empty_j + dj
         if 0 <= new_i < GRID_SIZE and 0 <= new_j < GRID_SIZE:
             new_state = copy.deepcopy(state)
             new_state[empty_i][empty_j], new_state[new_i][new_j] = new_state[new_i][new_j], new_state[empty_i][empty_j]
             neighbors.append(new_state)
-    print(f"Neighbors of {state}: {neighbors}")
     return neighbors
 
 def state_to_tuple(state):
@@ -126,27 +117,20 @@ def apply_action_to_state(state_list, action):
 
 
 def manhattan_distance(state):
-    
     distance = 0
     goal_pos = {}
     for r_goal in range(GRID_SIZE):
         for c_goal in range(GRID_SIZE):
             val = goal_state[r_goal][c_goal]
-            if val != 0:
+            if val != 0 :
                 goal_pos[val] = (r_goal, c_goal)
 
-    print(f"Goal positions: {goal_pos}")
     for r_curr in range(GRID_SIZE):
         for c_curr in range(GRID_SIZE):
             tile = state[r_curr][c_curr]
             if tile is not None and tile != 0 and tile in goal_pos:
                 goal_r, goal_c = goal_pos[tile]
-                tile_distance = abs(r_curr - goal_r) + abs(c_curr - goal_c)
-                distance += tile_distance
-                print(f"Tile {tile} at ({r_curr},{c_curr}), goal at ({goal_r},{goal_c}), distance: {tile_distance}")
-            elif tile is None:
-                print(f"Warning: None found in state at ({r_curr},{c_curr})")
-    print(f"Manhattan distance for {state}: {distance}")
+                distance += abs(r_curr - goal_r) + abs(c_curr - goal_c)
     return distance
 
 def is_valid_state_for_solve(state_to_check):
@@ -424,104 +408,85 @@ def greedy(start_node_state, time_limit=30):
             frontier.put((h_neighbor, neighbor_s, path + [neighbor_s]))
             
     return None
-
-def heuristic_misplaced(state_list, goal_state_list):
-    """
-    Hàm heuristic tính số ô sai vị trí so với trạng thái đích.
-    Args:
-        state_list: Trạng thái hiện tại (danh sách 2D).
-        goal_state_list: Trạng thái đích (danh sách 2D).
-    Returns:
-        int: Số ô sai vị trí (không tính ô trống 0).
-    """
-    misplaced = 0
-    for r in range(GRID_SIZE):
-        for c in range(GRID_SIZE):
-            if state_list[r][c] != 0 and state_list[r][c] != goal_state_list[r][c]:
-                misplaced += 1
-    print(f"Misplaced heuristic for {state_list}: {misplaced}")
-    return misplaced
+def _search_ida_recursive(path_ida, g_score, threshold, start_time_ida, time_limit_ida):
     
+    if time.time() - start_time_ida >= time_limit_ida:
+        return "Timeout", float('inf') 
+
+    current_s_ida = path_ida[-1]
+    current_tuple_ida = state_to_tuple(current_s_ida) 
+
+    h_ida = manhattan_distance(current_s_ida)
+    f_score_ida = g_score + h_ida
+
+    if f_score_ida > threshold:
+        return None, f_score_ida 
+
+    if is_goal(current_s_ida):
+
+        return path_ida[:], threshold
+
+    min_new_threshold = float('inf') 
+
+    current_path_tuples = {state_to_tuple(s) for s in path_ida}
+
+    for neighbor_s_ida in get_neighbors(current_s_ida):
+        neighbor_tuple_ida = state_to_tuple(neighbor_s_ida)
+        if neighbor_tuple_ida is None: continue
+        if neighbor_tuple_ida in current_path_tuples:
+            continue
+
+
+        new_g_ida = g_score + 1
+        path_ida.append(neighbor_s_ida)
+
+        result_ida, recursive_threshold_ida = _search_ida_recursive(
+            path_ida, new_g_ida, threshold, start_time_ida, time_limit_ida
+        )
+
+        path_ida.pop()
+
+
+        if result_ida == "Timeout":
+            return "Timeout", float('inf') 
+        if result_ida is not None: 
+            return result_ida, threshold 
+
+        min_new_threshold = min(min_new_threshold, recursive_threshold_ida)
+
+    return None, min_new_threshol
+
+
 def ida_star(start_node_state, time_limit=60):
-    """
-    Thuật toán IDA* để giải bài toán 8-puzzle.
-    Args:
-        start_node_state: Trạng thái ban đầu (2D).
-        time_limit: Giới hạn thời gian (giây).
-    Returns:
-        list: Đường đi từ trạng thái ban đầu đến mục tiêu, hoặc None nếu không tìm thấy.
-    """
+   
     start_time_global = time.time()
-    print(f"Starting IDA* with initial state: {start_node_state}")
-    print(f"Goal state: {goal_state}")
+    init_tuple = state_to_tuple(start_node_state)
+    if init_tuple is None: return None
 
-    def search(current_state_list, g_cost, threshold, current_path_list, visited_in_path):
-        """
-        Hàm đệ quy cho tìm kiếm IDA*.
-        Args:
-            current_state_list: Trạng thái hiện tại.
-            g_cost: Chi phí từ trạng thái ban đầu đến hiện tại.
-            threshold: Ngưỡng f-score hiện tại.
-            current_path_list: Đường đi hiện tại.
-            visited_in_path: Tập hợp trạng thái đã thăm trong đường đi hiện tại.
-        Returns:
-            tuple: (ngưỡng mới hoặc f-cost, đường đi nếu tìm thấy hoặc None).
-        """
+
+    threshold = manhattan_distance(start_node_state)
+
+    while True: 
         if time.time() - start_time_global >= time_limit:
-            print("IDA* timeout")
-            return float('inf'), None
+            return None 
 
-        current_state_tuple = tuple(map(tuple, current_state_list))
-        if current_state_tuple in visited_in_path:
-            print(f"Cycle detected at state: {current_state_list}")
-            return float('inf'), None
+        current_path = [start_node_state] 
 
-        f_cost = g_cost + heuristic_misplaced(current_state_list, goal_state)
-        print(f"Exploring state: {current_state_list}, g: {g_cost}, h: {f_cost - g_cost}, f: {f_cost}, threshold: {threshold}")
+        result, new_threshold_candidate = _search_ida_recursive(
+            current_path, 0, threshold, start_time_global, time_limit
+        )
 
-        if f_cost > threshold:
-            print(f"f-cost {f_cost} exceeds threshold {threshold}")
-            return f_cost, None
+        if result == "Timeout":
+        
+            return None 
+        if result is not None: 
+            return result
 
-        if is_goal(current_state_list):
-            print(f"Goal found with path: {current_path_list + [current_state_list]}")
-            return f_cost, current_path_list + [current_state_list]
+        if new_threshold_candidate == float('inf'):
 
-        min_next_threshold = float('inf')
-        visited_in_path.add(current_state_tuple)
-
-        for neighbor_list in get_neighbors(current_state_list):
-            new_threshold, result_path = search(
-                neighbor_list, g_cost + 1, threshold, current_path_list + [current_state_list], visited_in_path.copy()
-            )
-            if result_path:
-                print(f"Solution found: {result_path}")
-                return new_threshold, result_path
-            min_next_threshold = min(min_next_threshold, new_threshold)
-
-        print(f"Returning min threshold: {min_next_threshold}")
-        return min_next_threshold, None
-
-    threshold = heuristic_misplaced(start_node_state, goal_state)
-    print(f"Initial threshold: {threshold}")
-
-    while True:
-        if time.time() - start_time_global >= time_limit:
-            print("IDA* global timeout")
-            return None
-
-        print(f"New iteration with threshold: {threshold}")
-        new_threshold, result_path = search(start_node_state, 0, threshold, [], set())
-        if result_path:
-            print(f"Solution path: {result_path}")
-            return result_path
-        if new_threshold == float('inf'):
-            print("No solution found (infinite threshold)")
-            return None
-        threshold = new_threshold
-        print(f"Updating threshold to: {threshold}")
-
-
+            return None 
+        threshold = new_threshold_candidate
+    
 def simple_hill_climbing(start_node_state, time_limit=30): 
     start_time = time.time()
     current_s = start_node_state
