@@ -10,7 +10,12 @@ Lâm Văn Dỉ - 23110191
 - Cung cấp cho người dùng về hiệu suất giữa các thuật toán khác nhau trong 6 nhóm thuật toán
 
 ## 2.Nội dung
-
+  ### Các thành phần chính của bài toán
+    - Trạng thái (State): Mảng 3x3 biểu diễn vị trí các ô số từ 1 đến 8 và một ô trống.
+    - Hành động (Action): Di chuyển ô trống (lên, xuống, trái, phải).
+    - Giải pháp (Solution): Chuỗi các hành động biến trạng thái ban đầu thành trạng thái đích.
+  ### 2.1 Các thuật toán tìm kiếm không có thông tin (Uninform Search)
+    - 
 BFS (Breadth-First Search)
 
 <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExN3l1ZTlyOGM2amF0ZG1rMnlocnhnY3FqZWY2MXcwNHhrcW83YW9leCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/GaOHKrpTiawcvoUjdZ/giphy.gif" alt="BFS" width="300"/>
