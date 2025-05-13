@@ -1,12 +1,12 @@
 Lâm Văn Dỉ - 23110191
 ### 1.Mục tiêu
 Dự án game 8-puzzel được xây dựng nhằm mục đích triển khai các thuật toán trong 6 nhóm thuật toán:
- - Uninform Search (Tìm kiếm không có thông tin)
- - Informed Search / Heuristic Search (Tìm kiếm có thông tin)
- - Local Search 
- - Complex Environment Search (Tìm kiếm trong môi trường phức tạp)
- - Constraint-Based Search (Tìm kiếm trong môi trường có ràng buộc)
- - Reinforcement Learning
+  - Uninform Search (Tìm kiếm không có thông tin)
+  - Informed Search / Heuristic Search (Tìm kiếm có thông tin)
+  - Local Search 
+  - Complex Environment Search (Tìm kiếm trong môi trường phức tạp)
+  - Constraint-Based Search (Tìm kiếm trong môi trường có ràng buộc)
+  - Reinforcement Learning
 Cung cấp cho người dùng về hiệu suất giữa các thuật toán khác nhau trong 6 nhóm thuật toán
 Nhóm thuật toán 1:
 
