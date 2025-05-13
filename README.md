@@ -51,7 +51,7 @@
   - **A Star** <img src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExNG90YXNjbGxvb2xkaGJ0bm5kaHlxbnhueWU0NzNnb2Fib3NsNXV6aCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/uNKyhnsCUS4qH83H6x/giphy.gif" alt="A*" width="300"/>
   - **IDA Star (Iterative Deepening A Star)** <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExbHg5eDZycW92d2xtbHhpdnE5bTI5YnIzbmE5MjhrMW5kM3ozejJiZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/WC2cRxvlxpcaWVYKB5/giphy.gif" alt="IDA*" width="300"/>
   
-  **Hiệu suất giữa các thuật toán** ![hieu-suat](https://github.com/user-attachments/assets/aef0f224-770c-456b-b335-86f28efe8884)
+  **Hiệu suất giữa các thuật toán** <img src="https://github.com/user-attachments/assets/aef0f224-770c-456b-b335-86f28efe8884" alt="hieus" width="300"/>
   
   **Nhận xét**
   - Thuật toán A* mất khoảng 0.026 giây và tìm được lời giải chỉ với 23 bước. Kết quả này cho thấy A* hoạt động chính xác theo lý thuyết: nó sử dụng cả chi phí thực g(n) và hàm heuristic h(n) (Manhattan distance) để đảm bảo tìm ra đường đi tối ưu ngắn nhất
@@ -75,7 +75,7 @@
   - **Genetic Algorithm**  <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExdHBra2Zrcmx6NTkzZTBxeDdwbjQ1dTlmanh1NWxobmk4eHVsbWl2bCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/MeHYIIHbAA29CKfvBY/giphy.gif" alt="GA" width="300"/>
   - **Beam Search**  <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExZmMxY3hxaHE5amprMjF4eDE3MDZpbjZ5ZGxiZjlodmJmdnY3dTR3ZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/gQPy7HkN70BPuiyC1s/giphy.gif" alt="Beam" width="300"/>
   
-  **Hiệu suất giữa các thuật toán** ![hs](https://github.com/user-attachments/assets/3309ca0a-94d4-457f-a498-91f3dde670b7)
+  **Hiệu suất giữa các thuật toán** <img src="https://github.com/user-attachments/assets/3309ca0a-94d4-457f-a498-91f3dde670b7" alt="hieus" width="300"/>
 
   **Nhận xét**
   - Genetic Algorithm (GA) mất 0.041 giây để giải bài toán với 6 bước đi. GA sử dụng quần thể các cá thể (mỗi cá thể là một chuỗi hành động), đánh giá fitness và tiến hóa qua nhiều thế hệ. Thời gian tương đối nhanh và lời giải ngắn (6 bước) cho thấy GA đã thành công trong việc tìm được lời giải hợp lệ, dù không tối ưu nhất
@@ -99,7 +99,7 @@
   - **Partially Observable (Sensorless Search)** <img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZzZibHpueTM1OWFubmg4OXptY3BlNXN5YnBkZWg4djRibnoxdTV4cCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2LpgGVKWYrExi5XYko/giphy.gif" alt="Sensor" width="300"/>
   - **Unknown or Dynamic Environment (Không nhìn thấy hoàn toàn – tìm kiếm trong môi trường niềm tin)** <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExZGp3aGppaDFmbHp3bXQyMjBsbzhsdWk4ZGt5cTE0Nmo4Y2s2ejc4ZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/N0IIfNC9MFumYBWNCi/giphy.gif" alt="Unknown" width="300"/>
   
-  **Hiệu suất giữa các thuật toán** ![image](https://github.com/user-attachments/assets/381b0af4-2bde-4345-8eb2-b9bcca5b68f6)
+  **Hiệu suất giữa các thuật toán** <img src="https://github.com/user-attachments/assets/381b0af4-2bde-4345-8eb2-b9bcca5b68f6" alt="hieus" width="300"/>
 
   **Nhận xét**
   - AND-OR Search cho kết quả rất nhanh (0.000 giây) nhưng không tìm được lời giải đến trạng thái mục tiêu (hiển thị “Not Goal”). Đây là thuật toán phù hợp cho các tình huống lập kế hoạch có điều kiện (conditional planning), nơi hành động có thể dẫn đến nhiều kết quả khác nhau. Tuy nhiên, với bài toán 8 Puzzle, AND-OR bị giới hạn do cách kiểm tra vòng lặp quá nghiêm ngặt (dùng chung visited set giữa các nhánh đệ quy), khiến nhiều nhánh hợp lệ bị loại bỏ. Ngoài ra, nếu trạng thái khởi đầu cách mục tiêu quá xa, thuật toán dễ bị cắt sớm do giới hạn độ sâu (depth limit)
@@ -130,11 +130,10 @@
       - <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcnZhanBpcGQyNzBndmNjenFmcm96emppZDVtaXV4NHR3ejcwbGY1ciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/VOs5QIt3V6QZ3jtJ2J/giphy.gif" alt="AC3(SA)" width="300"/>
         
   **Hiệu suất giữa các thuật toán**
-  - Hiệu suất Backtracking
-  ![Ảnh chụp màn hình 2025-05-13 230054](https://github.com/user-attachments/assets/717e0bfb-dadb-4bc9-8efb-abc4a7e8269c)
-  -Hiệu suất AC3
-  ![Ảnh chụp màn hình 2025-05-13 230151](https://github.com/user-attachments/assets/f98bd7e0-a13d-44b9-b72e-1c00f932c0ff)
+  - Hiệu suất Backtracking <img src="https://github.com/user-attachments/assets/717e0bfb-dadb-4bc9-8efb-abc4a7e8269c" alt="hss" width="300"/>
 
+  -Hiệu suất AC3 <img src="https://github.com/user-attachments/assets/f98bd7e0-a13d-44b9-b72e-1c00f932c0ff" alt="hieus" width="300"/>
+  
   **Nhận xét**
   - AC3 giúp loại bỏ các giá trị không hợp lệ trước khi giải, từ đó rút gọn không gian trạng thái. Trong kết quả trên, việc kết hợp AC3 với A* cho thời gian giải rất nhanh (0.024s) và lời giải ngắn (20 bước), trong khi dùng với SA thì giải được nhưng phải mất 36 bước
   - Backtracking (BT) sinh ngẫu nhiên các trạng thái đầu vào hợp lệ, sau đó áp dụng thuật toán giải. Ở đây, BT kết hợp A* cho kết quả cực kỳ tốt – chỉ 0.001s và 14 bước, cho thấy BT đã tạo ra một trạng thái khởi đầu rất gần mục tiêu. Tuy nhiên, nếu dùng với BFS thì rất chậm (13.248s), vì BFS không tận dụng tốt thông tin trạng thái ban đầu gần đích.
@@ -163,9 +162,13 @@
   **Các thuật toán trong nhóm**
   - **Q-Learning** <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExcnBic2w3Y3R1cmNzbXBrOXVlODF1bTViMTF6bDF5b2pydnE2MXd5dCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/POgDx9jgMpncPZhNJI/giphy.gif" alt="Q-Learning" width="300"/>
     
-  **Hiệu suất giữa các thuật toán** ![Ảnh chụp màn hình 2025-05-13 230300](https://github.com/user-attachments/assets/508ac2c0-3c6b-4fbe-b289-3b68707f4496)
+  **Hiệu suất giữa các thuật toán** <img src="https://github.com/user-attachments/assets/508ac2c0-3c6b-4fbe-b289-3b68707f4496" alt="hieus" width="300"/>****
 
   **Nhận xét**
   - Q-Learning mất 1.604 giây để tìm được lời giải chỉ với 4 bước đi, cho thấy nó đã học được một chính sách hành động hiệu quả sau quá trình huấn luyện. Tuy thời gian chạy có vẻ cao hơn so với các thuật toán tìm kiếm cổ điển như A* hay BFS, nhưng điều này là do giai đoạn học (training) tốn nhiều thời gian để cập nhật giá trị Q cho tất cả các trạng thái – đặc biệt trong không gian trạng thái lớn như 8 Puzzle.
   - Q-Learning thể hiện tiềm năng cao trong việc giải bài toán khi không có tri thức ban đầu, và là hướng tiếp cận hiện đại thay thế cho các thuật toán tìm kiếm truyền thống trong môi trường động hoặc không xác định.
+
+## 3.Kết luận
+ - Dự án đã triển khai thành công nhiều nhóm thuật toán khác nhau để giải bài toán 8 Puzzle, từ các chiến lược tìm kiếm cơ bản, heuristic, đến các kỹ thuật học tăng cường và tiền xử lý nâng cao. Mỗi nhóm thuật toán đều thể hiện những đặc trưng riêng về hiệu quả thời gian, độ tối ưu lời giải và tính phù hợp với từng loại bài toán.
+ - Không chỉ củng cố kiến thức về các thuật toán trí tuệ nhân tạo, mà còn mở rộng kỹ năng triển khai, tối ưu hóa và đánh giá hiệu suất thuật toán trên cùng một bài toán nền tảng. Dự án cũng đặt nền tảng tốt cho việc áp dụng các chiến lược AI phức tạp hơn trong các bài toán thực tế như lập kế hoạch, học máy và robot.
 
