@@ -117,13 +117,14 @@
   - Giải pháp (Solution): chuỗi các hành động dẫn đến trạng thái đích.
     
   **Các thuật toán trong nhóm**
-  - **Backtracking**
+  
+  **Backtracking**
   - Backtracking cho 3 thuật toán: A*, BFS, Simulated Annealing
       - <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExaGRyMTVxaGN6Y3l5YjI3ZW0xaDRueHo5YTZ6bnlvOXUxOXlmbzUxcSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/4zYgfekaf0rxekgEvo/giphy.gif" alt="BT(A*)" width="300"/>
       - <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExemlmc3hrM3h1ZTVyOWNtM3MwaXZsOXBnZTY3M2VzMWF4czNhN3FvOCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/1nerndgr9D7iWAAR2G/giphy.gif" alt="BT(BFS)" width="300"/>
       - <img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3Z0ZWtnejZ0amxsbGl0bzN5dzQ1eDZzd3FiYzZ3NHA5a3MxNDE1ZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/pn2G5V2S5ZLBdeRSGH/giphy.gif" alt="BT(SA)" width="300"/>
       
-  - **AC3**
+  **AC3**
   - AC3 cho 3 thuật toán: A*, BFS, Simulated Annealing:
       - <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTZwcGpjeWZyYTY4NmhxZzczaW05bG5wYm9kZHg0NmNmMGlsMHo5aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/x1r2mwIzYz2gjT5tIf/giphy.gif" alt="AC3(A*)" width="300"/>
       - <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExdjVwc2NiMnI0N2pqbWoxanpuZ3d0Ynkwam1kbW15MHM2MW16ejJ3aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/1mVGDqDy9ajosWzUAL/giphy.gif" alt="AC3(BFS)" width="300"/>
