@@ -882,54 +882,84 @@ def random_hill_climbing(start_node_state, time_limit=30, max_iter_no_improve=50
             return path
     return path
 
-def simulated_annealing(start_node_state, initial_temp=1000, cooling_rate=0.99, min_temp=0.1, time_limit=30):
+def simulated_annealing(start_node_state, initial_temp=20, cooling_rate=0.95, min_temp=1.0, time_limit=15):
     start_time = time.time()
     current_s = start_node_state
     current_h = manhattan_distance(current_s)
     if current_h == float('inf'): return [start_node_state]
-    path = [current_s] # Store the actual path taken
-
-    best_s_so_far = current_s # Track the best state found overall
+    path = [current_s]
+    best_s_so_far = current_s
     best_h_so_far = current_h
-
+    best_path_so_far = [current_s]
+    
     temp = initial_temp
+    iteration = 0
+    no_improve_count = 0
+    max_no_improve = 500
+    max_iterations = 5000
 
-    while temp > min_temp:
+    while temp > min_temp and iteration < max_iterations:
         if time.time() - start_time > time_limit:
-            # print("Simulated Annealing Timeout")
-            return path # Return path taken so far
+            print("SA Timeout: Returning best path")
+            return best_path_so_far
 
         if is_goal(current_s):
+            print("Goal reached!")
             return path
 
         neighbors = get_neighbors(current_s)
         if not neighbors: break
 
-        # Pick a random neighbor
-        next_s = random.choice(neighbors)
-        next_h = manhattan_distance(next_s)
-        if next_h == float('inf'): continue # Skip invalid
+        # Evaluate neighbors
+        neighbor_scores = [(manhattan_distance(n), n) for n in neighbors]
+        neighbor_scores = [(h, n) for h, n in neighbor_scores if h != float('inf')]
+        if not neighbor_scores: continue
 
-        # Calculate change in heuristic (cost)
+        # Choose best neighbor with 70% probability
+        if random.random() < 0.7 and neighbor_scores:
+            next_h, next_s = neighbor_scores[0]
+        else:
+            next_h, next_s = random.choice(neighbor_scores)
+
         delta_h = next_h - current_h
 
-        # Accept if better, or maybe accept if worse based on probability
         if delta_h < 0 or (temp > 0 and random.random() < math.exp(-delta_h / temp)):
             current_s = next_s
             current_h = next_h
-            path.append(current_s) # Add accepted move to path
+            path.append(current_s)
 
-            # Update best found if current is better
             if current_h < best_h_so_far:
                 best_s_so_far = current_s
                 best_h_so_far = current_h
-        # Else: Neighbor not accepted, do nothing
+                best_path_so_far = path[:]
+                no_improve_count = 0
+            else:
+                no_improve_count += 1
 
-        # Cool down temperature
-        temp *= cooling_rate
+        # Restart if stuck
+        if no_improve_count >= max_no_improve:
+            current_s = start_node_state
+            current_h = manhattan_distance(current_s)
+            path = [current_s]
+            temp = initial_temp
+            no_improve_count = 0
+            print(f"Restarting at iteration {iteration}")
 
-    # After loop (temp cooled down), return the path taken
-    return path
+        # Logarithmic cooling schedule
+        temp = initial_temp / (1 + 0.01 * iteration)
+        iteration += 1
+
+        # Debug output
+        if iteration % 100 == 0:
+            print(f"Iteration {iteration}: temp={temp:.2f}, current_h={current_h}, best_h={best_h_so_far}, path_len={len(path)}")
+
+    # Try to complete path from best state to goal
+    if not is_goal(best_s_so_far):
+        print("Running A* to complete path from best state")
+        remaining_path = astar(best_s_so_far, time_limit=5)
+        if remaining_path:
+            return best_path_so_far[:-1] + remaining_path
+    return best_path_so_far
 
 # --- Beam Search ---
 def beam_search(start_node_state, beam_width=5, time_limit=30):
