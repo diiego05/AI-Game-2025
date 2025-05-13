@@ -11,9 +11,9 @@ Lâm Văn Dỉ - 23110191
 
 ## 2.Nội dung
   ### Các thành phần chính của bài toán
-    - Trạng thái (State): Mảng 3x3 biểu diễn vị trí các ô số từ 1 đến 8 và một ô trống.
-    - Hành động (Action): Di chuyển ô trống (lên, xuống, trái, phải).
-    - Giải pháp (Solution): Chuỗi các hành động biến trạng thái ban đầu thành trạng thái đích.
+  - Trạng thái (State): Mảng 3x3 biểu diễn vị trí các ô số từ 1 đến 8 và một ô trống.
+  - Hành động (Action): Di chuyển ô trống (lên, xuống, trái, phải).
+  - Giải pháp (Solution): Chuỗi các hành động biến trạng thái ban đầu thành trạng thái đích.
   ### 2.1 Các thuật toán tìm kiếm không có thông tin (Uninform Search)
     - 
 BFS (Breadth-First Search)
