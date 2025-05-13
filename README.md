@@ -32,6 +32,7 @@
    - Kết luận trong nhóm này thuật toán chạy tốt nhất và nhanh nhất ưu tiên dùng nhiều hơn là BFS
      
   ### 2.2 Các thuật toán tìm kiếm có thông tin (Informed Search / Heuristic Search)
+  - Các thuật toán này sử dụng hàm heuristic (trong code là manhattan_distance) để ước lượng khoảng cách còn lại đến đích. Có khả năng tìm đường hiệu quả hơn vì có định hướng
   **Thành phần bài toán:**
   - Trạng thái: ma trận 3x3 gồm các số từ 0 đến 8 (0 là ô trống).
   - Hành động: di chuyển ô trống lên/xuống/trái/phải.
@@ -46,17 +47,37 @@
   **Nhận xét**
 
   
-  ### 2.3 Các thuật toán tìm kiếm có thông tin (Informed Search / Heuristic Search)
+  ### 2.3 Các thuật toán tìm kiếm cục bộ (Local Search)
+  - Không quan tâm đến đường đi, chỉ tập trung cải thiện trạng thái hiện tại.
   **Thành phần bài toán:**
-  - Trạng thái: ma trận 3x3 gồm các số từ 0 đến 8 (0 là ô trống).
-  - Hành động: di chuyển ô trống lên/xuống/trái/phải.
-  - Chi phí đường đi: Tổng số bước di chuyển
-  - Hàm heuristic để dẫn đường tìm kiếm hiệu quả hơn.
+  - Trạng thái:Một trạng thái có thể hợp lệ hoặc ngẫu nhiên.
+  - Hàm đánh giá (Objective Function): khoảng cách Manhattan từ trạng thái hiện tại đến trạng thái đích.
+  - Hàm lân cận: Trả về các trạng thái kế cận.
   - Giải pháp (Solution): chuỗi các hành động dẫn đến trạng thái đích.
   **Các thuật toán trong nhóm**
-  - **Greedy Search**
-  - **A Star**
-  - **IDA Star (Iterative Deepening A Star)**
+  - **Simple Hill Climbing**
+  - **Steepest-Ascent Hill Climbing**
+  - **Stochastic Hill Climbing**
+  - **Simulated Annealing**
+  - **Genetic Algorithm**
+  - **Beam Search**
+  **Hiệu suất giữa các thuật toán**
+  **Nhận xét**
+
+  ### 2.4 Các thuật toán tìm kiếm trong môi trường phức tạp (Complex Environment Search)
+  - Trạng thái không hoàn toàn quan sát được hoặc môi trường thay đổi. Trạng thái ban đầu có thể chứa None → cần sinh ra belief state.
+  **Thành phần bài toán:**
+  - Trạng thái:Một trạng thái có thể hợp lệ hoặc ngẫu nhiên.
+  - Hàm đánh giá (Objective Function): khoảng cách Manhattan từ trạng thái hiện tại đến trạng thái đích.
+  - Hàm lân cận: Trả về các trạng thái kế cận.
+  - Giải pháp (Solution): chuỗi các hành động dẫn đến trạng thái đích.
+  **Các thuật toán trong nhóm**
+  - **Simple Hill Climbing**
+  - **Steepest-Ascent Hill Climbing**
+  - **Stochastic Hill Climbing**
+  - **Simulated Annealing**
+  - **Genetic Algorithm**
+  - **Beam Search**
   **Hiệu suất giữa các thuật toán**
   **Nhận xét**
     
