@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*- # Thêm dòng này để hỗ trợ UTF-8 tốt hơn
-
 import pygame
 import sys
 from collections import deque, defaultdict # Thêm defaultdict
@@ -882,84 +880,105 @@ def random_hill_climbing(start_node_state, time_limit=30, max_iter_no_improve=50
             return path
     return path
 
-def simulated_annealing(start_node_state, initial_temp=20, cooling_rate=0.95, min_temp=1.0, time_limit=15):
+def simulated_annealing(start_node_state, initial_temp=20.0, cooling_rate=0.95, min_temp=0.1, time_limit=15):
     start_time = time.time()
     current_s = start_node_state
     current_h = manhattan_distance(current_s)
-    if current_h == float('inf'): return [start_node_state]
+    if current_h == float('inf'): return [start_node_state] # Cannot start if invalid
+
     path = [current_s]
-    best_s_so_far = current_s
+    best_s_so_far = copy.deepcopy(current_s)
     best_h_so_far = current_h
-    best_path_so_far = [current_s]
-    
+    best_path_so_far = [copy.deepcopy(current_s)]
+
     temp = initial_temp
     iteration = 0
-    no_improve_count = 0
-    max_no_improve = 500
+    no_improve_count = 0 # Counts iterations without finding a new *best_s_so_far*
+    max_no_improve_restart = 500 # If best_s_so_far doesn't improve for this many iterations, consider restart
     max_iterations = 5000
 
     while temp > min_temp and iteration < max_iterations:
         if time.time() - start_time > time_limit:
-            print("SA Timeout: Returning best path")
-            return best_path_so_far
+            # print("SA Timeout: Returning best path found so far.")
+            break # Exit main loop on timeout
 
         if is_goal(current_s):
-            print("Goal reached!")
-            return path
+            # print("SA: Goal reached during annealing!")
+            # Update best path if current path to goal is better
+            if current_h < best_h_so_far: # Should be true if current_s is goal
+                 best_s_so_far = copy.deepcopy(current_s)
+                 best_h_so_far = current_h
+                 best_path_so_far = path[:]
+            break # Exit main loop if goal reached
 
         neighbors = get_neighbors(current_s)
-        if not neighbors: break
+        if not neighbors: break # Stuck
 
-        # Evaluate neighbors
-        neighbor_scores = [(manhattan_distance(n), n) for n in neighbors]
-        neighbor_scores = [(h, n) for h, n in neighbor_scores if h != float('inf')]
-        if not neighbor_scores: continue
+        # Evaluate neighbors and select one (can be simplified for random choice)
+        # For 8-puzzle, all neighbors are usually equally easy to generate
+        chosen_neighbor_s = random.choice(neighbors)
+        chosen_neighbor_h = manhattan_distance(chosen_neighbor_s)
 
-        # Choose best neighbor with 70% probability
-        if random.random() < 0.7 and neighbor_scores:
-            next_h, next_s = neighbor_scores[0]
-        else:
-            next_h, next_s = random.choice(neighbor_scores)
+        if chosen_neighbor_h == float('inf'): # Skip invalid neighbor
+            iteration += 1
+            no_improve_count +=1
+            continue
 
-        delta_h = next_h - current_h
+        delta_h = chosen_neighbor_h - current_h
 
-        if delta_h < 0 or (temp > 0 and random.random() < math.exp(-delta_h / temp)):
-            current_s = next_s
-            current_h = next_h
-            path.append(current_s)
-
+        if delta_h < 0: # Always accept better state
+            current_s = chosen_neighbor_s
+            current_h = chosen_neighbor_h
+            path.append(copy.deepcopy(current_s))
             if current_h < best_h_so_far:
-                best_s_so_far = current_s
+                best_s_so_far = copy.deepcopy(current_s)
                 best_h_so_far = current_h
                 best_path_so_far = path[:]
                 no_improve_count = 0
             else:
                 no_improve_count += 1
+        elif temp > 0 and random.random() < math.exp(-delta_h / temp): # Accept worse state with probability
+            current_s = chosen_neighbor_s
+            current_h = chosen_neighbor_h
+            path.append(copy.deepcopy(current_s))
+            no_improve_count += 1 # Didn't improve best_s_so_far
+        else: # Did not move
+            no_improve_count += 1
 
-        # Restart if stuck
-        if no_improve_count >= max_no_improve:
-            current_s = start_node_state
-            current_h = manhattan_distance(current_s)
-            path = [current_s]
-            temp = initial_temp
+        # Optional: Restart from best_s_so_far if stuck in a local optimum for too long
+        if no_improve_count >= max_no_improve_restart:
+            # print(f"SA Restarting from best_s_so_far at iteration {iteration}")
+            current_s = copy.deepcopy(best_s_so_far) # Go back to overall best state
+            current_h = best_h_so_far
+            path = best_path_so_far[:] # Reset current path to the best path found
+            # temp = initial_temp * 0.8 # Optionally reset temperature partially
             no_improve_count = 0
-            print(f"Restarting at iteration {iteration}")
 
-        # Logarithmic cooling schedule
-        temp = initial_temp / (1 + 0.01 * iteration)
+
+        temp *= cooling_rate # Geometric cooling
         iteration += 1
 
         # Debug output
-        if iteration % 100 == 0:
-            print(f"Iteration {iteration}: temp={temp:.2f}, current_h={current_h}, best_h={best_h_so_far}, path_len={len(path)}")
+        # if iteration % 100 == 0:
+        #     print(f"SA Iteration {iteration}: temp={temp:.2f}, current_h={current_h}, best_h={best_h_so_far}, path_len={len(path)}")
 
-    # Try to complete path from best state to goal
+    # After loop finishes (timeout, min_temp, max_iter, or goal)
+    # Attempt to complete path from best_s_so_far to goal using A* if not already goal
     if not is_goal(best_s_so_far):
-        print("Running A* to complete path from best state")
-        remaining_path = astar(best_s_so_far, time_limit=5)
-        if remaining_path:
-            return best_path_so_far[:-1] + remaining_path
+        # print("SA: Attempting A* completion from best state found.")
+        remaining_time_for_astar = max(1, time_limit - (time.time() - start_time)) # Use remaining time for A*
+        if is_valid_state_for_solve(best_s_so_far): # Ensure best_s_so_far is valid before A*
+            astar_completion_path = astar(best_s_so_far, time_limit=remaining_time_for_astar)
+            if astar_completion_path and len(astar_completion_path) > 0:
+                # Combine SA path up to best_s_so_far with A* completion
+                # Ensure no duplication of best_s_so_far
+                if best_path_so_far and best_path_so_far[-1] == astar_completion_path[0]:
+                    return best_path_so_far[:-1] + astar_completion_path
+                else: # This case implies best_path_so_far was empty or ended differently
+                    return best_path_so_far + astar_completion_path # May need adjustment
+        # If A* fails or best_s_so_far invalid, return the best path found by SA alone
     return best_path_so_far
+
 
 # --- Beam Search ---
 def beam_search(start_node_state, beam_width=5, time_limit=30):
@@ -1091,28 +1110,29 @@ def backtracking_search(selected_sub_algorithm_name, max_attempts=50, time_limit
         'Hill Climbing': simple_hill_climbing, 'Steepest Hill': steepest_hill_climbing,
         'Stochastic Hill': random_hill_climbing, 'SA': simulated_annealing,
         'Beam Search': beam_search, 'AND-OR': and_or_search,
-        'Sensorless': sensorless_search, # Note: Backtracking might not be ideal for Sensorless
-        'Unknown': sensorless_search,    # Note: Backtracking might not be ideal for Unknown
-        'Q-Learning': q_learning_train_and_solve, # Add Q-Learning
+        'Sensorless': sensorless_search,
+        'Unknown': sensorless_search,
+        'Q-Learning': q_learning_train_and_solve,
+        'GA': genetic_algorithm_solve, # Add GA
     }
     sub_algo_func = algo_map.get(selected_sub_algorithm_name)
     if not sub_algo_func:
         return None, f"Sub-algorithm '{selected_sub_algorithm_name}' not supported for Backtracking.", None, None
 
-    # Determine Time Limit Per Attempt (Adjusted for Q-Learning)
-    slow_algos = ['IDA*', 'Sensorless', 'Unknown', 'IDS', 'Q-Learning'] # Added Q-Learning
+    # Determine Time Limit Per Attempt
+    slow_algos = ['IDA*', 'Sensorless', 'Unknown', 'IDS', 'Q-Learning', 'GA'] # Added GA
     default_time_per_attempt = 15
-    slow_time_per_attempt = 60 # Give Q-Learning more time by default
+    slow_time_per_attempt = 60
     if max_attempts <= 0: max_attempts = 1
     base_time_limit_per_sub_solve = time_limit_overall / max_attempts
-    min_time_per_attempt = 1.0 if selected_sub_algorithm_name not in slow_algos else 10.0 # Min time for slow algos
+    min_time_per_attempt = 1.0 if selected_sub_algorithm_name not in slow_algos else 10.0
     max_time_per_attempt = default_time_per_attempt if selected_sub_algorithm_name not in slow_algos else slow_time_per_attempt
     time_limit_per_sub_solve = max(min_time_per_attempt, base_time_limit_per_sub_solve)
     time_limit_per_sub_solve = min(time_limit_per_sub_solve, max_time_per_attempt)
 
     # print(f"Backtracking using {selected_sub_algorithm_name} with time limit/attempt: {time_limit_per_sub_solve:.2f}s")
 
-    for attempts in range(max_attempts):
+    for attempts_count in range(max_attempts): # Renamed to avoid conflict
         if time.time() - start_time_overall > time_limit_overall:
             # print("Backtracking: Global timeout.")
             return None, "Backtracking: Global timeout.", None, None
@@ -1126,7 +1146,7 @@ def backtracking_search(selected_sub_algorithm_name, max_attempts=50, time_limit
              if is_solvable(state_try): # Check against fixed goal
                   current_attempt_2d_start = state_try
                   break
-        # print(f"Attempt {attempts+1}: Trying solvable state: {current_attempt_2d_start}")
+        # print(f"Attempt {attempts_count+1}: Trying solvable state: {current_attempt_2d_start}")
 
         # Prepare and Run Sub-Algorithm
         algo_params = [current_attempt_2d_start]
@@ -1134,7 +1154,6 @@ def backtracking_search(selected_sub_algorithm_name, max_attempts=50, time_limit
 
         if 'time_limit' in sub_algo_func_varnames:
             algo_params.append(time_limit_per_sub_solve)
-        # Add other specific parameters if needed (copy from main loop logic)
         elif selected_sub_algorithm_name == 'DFS' and 'max_depth' in sub_algo_func_varnames:
             algo_params.append(30)
         elif selected_sub_algorithm_name == 'IDS' and 'max_depth_limit' in sub_algo_func_varnames:
@@ -1143,7 +1162,7 @@ def backtracking_search(selected_sub_algorithm_name, max_attempts=50, time_limit
              algo_params.append(500)
         elif selected_sub_algorithm_name == 'Beam Search' and 'beam_width' in sub_algo_func_varnames:
              algo_params.append(5)
-        # Q-Learning takes time_limit, handled above
+        # Q-Learning & GA take time_limit, handled above
 
         path_from_sub_algo = None
         action_plan_from_sub_algo = None
@@ -1151,45 +1170,37 @@ def backtracking_search(selected_sub_algorithm_name, max_attempts=50, time_limit
 
         try:
             if selected_sub_algorithm_name in ['Sensorless', 'Unknown']:
-                 # For Backtracking, treat the random state as a (complete) template
                 action_plan_from_sub_algo, belief_size_sub = sub_algo_func(*algo_params)
                 if action_plan_from_sub_algo is not None:
                     path_from_sub_algo = execute_plan(current_attempt_2d_start, action_plan_from_sub_algo)
-                    if path_from_sub_algo is None: action_plan_from_sub_algo = None # Execution failed
-            else: # Standard solvers including Q-Learning
+                    if path_from_sub_algo is None: action_plan_from_sub_algo = None
+            else: # Standard solvers including Q-Learning and GA
                 path_from_sub_algo = sub_algo_func(*algo_params)
 
         except Exception as e:
             print(f"Error in sub-algorithm '{selected_sub_algorithm_name}': {e}")
-            # traceback.print_exc() # Optional detailed traceback
-            continue # Try next attempt
+            # traceback.print_exc()
+            continue
 
         # Check if Sub-Algorithm Succeeded
         if path_from_sub_algo and len(path_from_sub_algo) > 0:
             sub_success = False
             if selected_sub_algorithm_name in ['Sensorless', 'Unknown']:
-                sub_success = (action_plan_from_sub_algo is not None) # Success is finding a plan
-            else: # Check if last state in path is goal
-                 if isinstance(path_from_sub_algo[-1], list):
+                sub_success = (action_plan_from_sub_algo is not None)
+            else:
+                 if isinstance(path_from_sub_algo[-1], list) and is_valid_state_for_solve(path_from_sub_algo[-1]): # Check validity before is_goal
                     sub_success = is_goal(path_from_sub_algo[-1])
-                 # else: path format is incorrect
 
             if sub_success:
-                # print(f"Backtracking Success! {selected_sub_algorithm_name} found solution on attempt {attempts+1}.")
                 return path_from_sub_algo, None, current_attempt_2d_start, action_plan_from_sub_algo
 
-        # else: print(f"Attempt {attempts+1}: {selected_sub_algorithm_name} failed.")
-
-
-    # Loop finished without success
-    msg = f"Backtracking: No solution found by {selected_sub_algorithm_name} after {attempts+1} attempts."
+    msg = f"Backtracking: No solution found by {selected_sub_algorithm_name} after {max_attempts} attempts." # Use max_attempts
     if time.time() - start_time_overall > time_limit_overall:
         msg = "Backtracking: Global timeout likely occurred. " + msg
     return None, msg, None, None
 
 
 # ----- Sensorless Search / Unknown Env Functions -----
-# ... (Keep existing generate_belief_states, is_belief_state_goal, apply_action_to_belief_states, sensorless_search) ...
 def generate_belief_states(partial_state_template):
     flat_state_template = []
     unknown_positions_indices_flat = []
@@ -1197,61 +1208,46 @@ def generate_belief_states(partial_state_template):
     is_template_with_unknowns = False
 
     if not isinstance(partial_state_template, list) or len(partial_state_template) != GRID_SIZE:
-        #print("Error: Invalid template structure (not a list or wrong size)")
         return []
 
     for r_idx, r_val in enumerate(partial_state_template):
         if not isinstance(r_val, list) or len(r_val) != GRID_SIZE:
-            #print(f"Error: Invalid row structure at index {r_idx}")
             return []
         for c_idx, tile in enumerate(r_val):
-            flat_state_template.append(tile) # Add even None to maintain indices
+            flat_state_template.append(tile)
             if tile is None:
                 is_template_with_unknowns = True
                 unknown_positions_indices_flat.append(r_idx * GRID_SIZE + c_idx)
             elif isinstance(tile, int):
                 if not (0 <= tile < GRID_SIZE * GRID_SIZE):
-                    #print(f"Error: Invalid tile value {tile}")
-                    return [] # Invalid tile number
+                    return []
                 if tile in known_numbers_set:
-                    #print(f"Error: Duplicate known number {tile}")
-                    return [] # Duplicate known number
+                    return []
                 known_numbers_set.add(tile)
             else:
-                 #print(f"Error: Invalid tile type {type(tile)}")
-                 return [] # Invalid type in cell
+                 return []
 
     if len(flat_state_template) != GRID_SIZE * GRID_SIZE:
-        #print("Error: Final flat state has incorrect length")
-        return [] # Should not happen
+        return []
 
-    # If no unknowns, just check if the single state is valid and solvable
     if not is_template_with_unknowns:
-        #print("Debug: No unknowns found.")
-        # It must be a *complete* state to be valid here
         if is_valid_state_for_solve(partial_state_template) and is_solvable(partial_state_template):
-            #print("Debug: Returning single valid and solvable state.")
             return [copy.deepcopy(partial_state_template)]
         else:
-            #print("Debug: Single state is invalid or unsolvable.")
             return []
 
-    # --- Generate permutations for unknown positions ---
     all_possible_tiles = list(range(GRID_SIZE * GRID_SIZE))
     missing_numbers_to_fill = [num for num in all_possible_tiles if num not in known_numbers_set]
 
     if len(missing_numbers_to_fill) != len(unknown_positions_indices_flat):
-        #print("Error: Mismatch between missing numbers and unknown positions.")
-        return [] # Mismatch indicates an issue in the template
+        return []
 
     belief_states_generated = []
-
     for perm_fill_nums in itertools.permutations(missing_numbers_to_fill):
-        new_flat_state_filled = list(flat_state_template) # Start with the template
+        new_flat_state_filled = list(flat_state_template)
         for i, unknown_idx in enumerate(unknown_positions_indices_flat):
             new_flat_state_filled[unknown_idx] = perm_fill_nums[i]
 
-        # Convert flat list back to 2D list
         state_2d_filled = []
         valid_2d = True
         if len(new_flat_state_filled) == GRID_SIZE * GRID_SIZE:
@@ -1260,81 +1256,54 @@ def generate_belief_states(partial_state_template):
                 state_2d_filled.append(new_flat_state_filled[row_start : row_start + GRID_SIZE])
         else: valid_2d = False
 
-        # Check if the generated complete state is valid and solvable
         if valid_2d and is_valid_state_for_solve(state_2d_filled):
              if is_solvable(state_2d_filled):
                 belief_states_generated.append(state_2d_filled)
-             # else: print(f"Debug: Skipping unsolvable state: {state_2d_filled}")
-        # else: print(f"Debug: Skipping invalid state after fill: {state_2d_filled}")
-
-
     return belief_states_generated
 
 
 def is_belief_state_goal(list_of_belief_states):
-    """Checks if all states in the belief state list are the goal state."""
-    if not list_of_belief_states:
-        return False # Empty belief state is not the goal
+    if not list_of_belief_states: return False
     for state_b in list_of_belief_states:
-        if not is_goal(state_b):
-            return False # Found a state that is not the goal
-    return True # All states are the goal
+        if not is_goal(state_b): return False
+    return True
 
 def apply_action_to_belief_states(list_of_belief_states, action_str):
-    """Applies an action to each state in the belief set and returns the new belief set."""
-    new_belief_states_set = set() # Use a set for automatic deduplication
-
+    new_belief_states_set = set()
     for state_b in list_of_belief_states:
-        # Apply the action using the updated apply_action_to_state
-        # It returns None if the action is invalid for state_b or if state_b is invalid
         next_s_b_list = apply_action_to_state(state_b, action_str)
-
-        # Only add valid resulting states to the new belief set
         if next_s_b_list:
             next_s_b_tuple = state_to_tuple(next_s_b_list)
-            if next_s_b_tuple: # Ensure conversion to tuple is successful
+            if next_s_b_tuple:
                  new_belief_states_set.add(next_s_b_tuple)
-            # else: # Resulting state was invalid, don't add
-            #    print(f"Warning: Action {action_str} on state {state_b} resulted in invalid state {next_s_b_list}")
-        # else: Action was impossible or input state was invalid for that action
-
-    # Convert valid tuples back to lists
     return [tuple_to_list(s_tuple) for s_tuple in new_belief_states_set if s_tuple is not None]
 
 
 def sensorless_search(start_belief_state_template, time_limit=60):
-    """
-    Performs BFS in belief state space to find a plan guaranteeing goal reach.
-    """
     start_time = time.time()
-    # 1. Generate initial belief state
     initial_belief_set_lists = generate_belief_states(start_belief_state_template)
 
     if not initial_belief_set_lists:
-        #print("Sensorless Search: No valid initial belief states.")
         return None, 0
     initial_belief_set_size = len(initial_belief_set_lists)
 
-    # 2. Convert to tuples and initialize BFS
     try:
         initial_belief_tuples = {state_to_tuple(s) for s in initial_belief_set_lists}
         if None in initial_belief_tuples: return None, initial_belief_set_size
     except Exception as e: return None, initial_belief_set_size
 
-    queue_sensorless = deque([ ( [], initial_belief_tuples ) ]) # (plan, belief_tuples)
-    visited_belief_sets = {frozenset(initial_belief_tuples)} # Visited stores frozensets
+    queue_sensorless = deque([ ( [], initial_belief_tuples ) ])
+    visited_belief_sets = {frozenset(initial_belief_tuples)}
 
-    possible_actions = ['Up', 'Down', 'Left', 'Right'] # Blank tile moves
-    max_plan_length = 30 # Limit search depth
+    possible_actions = ['Up', 'Down', 'Left', 'Right']
+    max_plan_length = 30
     nodes_explored = 0
     last_processed_bs_size = initial_belief_set_size
 
-    # 3. BFS loop
     while queue_sensorless:
         nodes_explored += 1
         if time.time() - start_time > time_limit:
             current_bs_size_on_timeout = len(queue_sensorless[0][1]) if queue_sensorless else last_processed_bs_size
-            #print(f"Sensorless Timeout after {nodes_explored} nodes.")
             return None, current_bs_size_on_timeout
 
         action_plan, current_bs_tuples = queue_sensorless.popleft()
@@ -1342,81 +1311,62 @@ def sensorless_search(start_belief_state_template, time_limit=60):
 
         if len(action_plan) > max_plan_length: continue
 
-        # Convert back to lists for processing
         current_bs_lists = [tuple_to_list(s) for s in current_bs_tuples if s is not None]
         if not current_bs_lists or len(current_bs_lists) != len(current_bs_tuples): continue
 
-        # 4. Check goal condition
         if is_belief_state_goal(current_bs_lists):
-            #print(f"Sensorless Goal found! Plan length: {len(action_plan)}")
             return action_plan, len(current_bs_lists)
 
-        # 5. Generate successors
         for action_s in possible_actions:
             next_bs_lists = apply_action_to_belief_states(current_bs_lists, action_s)
             if not next_bs_lists: continue
-
-            # Convert to tuples/frozenset for visited check
             try:
                 next_bs_tuples = {state_to_tuple(s) for s in next_bs_lists}
                 if None in next_bs_tuples or not next_bs_tuples: continue
                 next_bs_frozenset = frozenset(next_bs_tuples)
             except Exception: continue
 
-            # 6. Check visited and enqueue
             if next_bs_frozenset not in visited_belief_sets:
                 visited_belief_sets.add(next_bs_frozenset)
                 new_plan_s = action_plan + [action_s]
                 queue_sensorless.append((new_plan_s, next_bs_tuples))
-
-    #print(f"Sensorless Queue empty after {nodes_explored} nodes. No solution.")
-    return None, last_processed_bs_size # No plan found
+    return None, last_processed_bs_size
 
 
 # --- Helper for visualizing plans ---
 def execute_plan(start_state, action_plan):
-    """Executes a plan (sequence of actions) from a given start state."""
     if start_state is None or not isinstance(start_state, list): return None
-    # Need a valid *start* state to execute from
     if not is_valid_state_for_solve(start_state):
-        # print("Warning: Executing plan on an invalid start state.")
+        # print(f"Execute plan called with invalid start state: {start_state}")
         return [start_state] # Return path containing only invalid start
 
     current_state = copy.deepcopy(start_state)
     state_sequence = [current_state]
-
     if not action_plan: return state_sequence
 
     for action in action_plan:
-        # Use the updated apply_action_to_state
         next_state = apply_action_to_state(current_state, action)
-        # Check if action was successful
         if next_state is None:
-             print(f"Error during plan execution: Action '{action}' failed on state {current_state}")
-             # Stop execution and return path up to failure point
+             # print(f"Error during plan execution: Action '{action}' failed on state {current_state}")
              return state_sequence
         current_state = next_state
-        state_sequence.append(copy.deepcopy(current_state)) # Add the *result* of the action
-
+        state_sequence.append(copy.deepcopy(current_state))
     return state_sequence
 
 
 # --- AC3 Helper Functions ---
-# ... (Keep existing find_first_empty_cell, get_used_numbers, ac3_fill_state) ...
 def find_first_empty_cell(state):
-    """Finds the first cell containing None."""
     if not isinstance(state, list): return None
     for r in range(GRID_SIZE):
         if not isinstance(state[r], list): return None
         for c in range(GRID_SIZE):
             try:
-                if state[r][c] is None: # Specifically check for None
+                if state[r][c] is None:
                     return r, c
             except IndexError: return None
     return None
 
 def get_used_numbers(state):
-    """Gets the set of numbers (integers) currently used in the grid."""
     used = set()
     if not isinstance(state, list): return used
     for r in range(GRID_SIZE):
@@ -1424,52 +1374,40 @@ def get_used_numbers(state):
         for c in range(GRID_SIZE):
             try:
                 tile = state[r][c]
-                if tile is not None and isinstance(tile, int): # Only add ints
+                if tile is not None and isinstance(tile, int):
                     used.add(tile)
             except IndexError: continue
     return used
 
 def ac3_fill_state(current_state_template):
-    """Attempts to fill a partial state using backtracking (Constraint Satisfaction)."""
     state_copy = copy.deepcopy(current_state_template)
     find_result = find_first_empty_cell(state_copy)
 
-    # Base Case: No empty cells left
     if find_result is None:
-        # Check if the completed state is valid *and* solvable
         if is_valid_state_for_solve(state_copy) and is_solvable(state_copy):
-            return state_copy # Success
+            return state_copy
         else:
-            return None # Failure (invalid or unsolvable completion)
+            return None
 
-    r, c = find_result # Variable to assign
-
-    # Domain of values for the variable
+    r, c = find_result
     used_nums = get_used_numbers(state_copy)
-    all_nums = set(range(GRID_SIZE * GRID_SIZE)) # 0-8
+    all_nums = set(range(GRID_SIZE * GRID_SIZE))
     available_nums = list(all_nums - used_nums)
 
-    # Try assigning values from domain
     for num in available_nums:
         state_copy[r][c] = num
-        result = ac3_fill_state(state_copy) # Recursive call
+        result = ac3_fill_state(state_copy)
         if result is not None:
-            return result # Propagate success back up
-        state_copy[r][c] = None # Backtrack: reset assignment
-
-    return None # All values tried, no solution found from this state
+            return result
+        state_copy[r][c] = None
+    return None
 
 
 # --- Q-Learning Implementation ---
 def q_learning_train_and_solve(start_node_state, time_limit=60):
-    """
-    Trains a Q-table using episodes starting from the initial state and then
-    extracts the best path found using the learned Q-values.
-    """
     start_time = time.time()
     goal_state_tuple = state_to_tuple(goal_state_fixed_global)
 
-    # Validate start state
     if not is_valid_state_for_solve(start_node_state):
         print("Q-Learning Error: Start state is invalid/incomplete.")
         return None
@@ -1478,186 +1416,485 @@ def q_learning_train_and_solve(start_node_state, time_limit=60):
         return None
     if goal_state_tuple is None:
         print("Q-Learning Error: Goal state is invalid.")
-        return None # Should not happen with fixed goal
+        return None
 
     start_node_tuple = state_to_tuple(start_node_state)
-    if start_node_tuple is None: return None # Should not happen
+    if start_node_tuple is None: return None
 
-    # --- Hyperparameters ---
-    learning_rate = 0.1      # Alpha: How much new info overrides old
-    discount_factor = 0.95   # Gamma: Importance of future rewards
-    epsilon_start = 1.0      # Initial exploration rate
-    epsilon_decay = 0.9995   # Rate of exploration decay
-    epsilon_min = 0.05       # Minimum exploration rate
-    num_episodes = 1500      # Number of training runs
-    max_steps_per_episode = 300 # Max steps per training run
+    learning_rate = 0.1
+    discount_factor = 0.95
+    epsilon_start = 1.0
+    epsilon_decay = 0.9995
+    epsilon_min = 0.05
+    num_episodes = 1500
+    max_steps_per_episode = 300
 
-    # Q-Table: Q[state_tuple][action_string] = q_value
     q_table = defaultdict(lambda: defaultdict(float))
     epsilon = epsilon_start
-
     print(f"Q-Learning: Starting training ({num_episodes} episodes, time limit {time_limit}s)...")
 
-    # --- Training Phase ---
+    training_episodes_completed = 0
     for episode in range(num_episodes):
-        # Check time limit at the start of each episode
         if time.time() - start_time > time_limit:
             print(f"Q-Learning: Training timeout during episode {episode+1}/{num_episodes}.")
             break
-
-        current_state_list = copy.deepcopy(start_node_state) # Reset to start for each episode
+        training_episodes_completed = episode + 1
+        current_state_list = copy.deepcopy(start_node_state)
 
         for step in range(max_steps_per_episode):
             current_state_tuple = state_to_tuple(current_state_list)
-            if current_state_tuple is None: break # Invalid state encountered
+            if current_state_tuple is None: break
+            if current_state_tuple == goal_state_tuple: break
 
-            # Check if goal reached at the beginning of the step
-            if current_state_tuple == goal_state_tuple:
-                break # Episode finished successfully
-
-            # Epsilon-greedy action selection
             valid_actions = get_valid_actions(current_state_list)
-            if not valid_actions: break # Stuck state
+            if not valid_actions: break
 
             chosen_action = None
             if random.random() < epsilon:
-                chosen_action = random.choice(valid_actions) # Explore
+                chosen_action = random.choice(valid_actions)
             else:
-                # Exploit: Choose best known action
                 current_q_values = q_table[current_state_tuple]
-                # Filter Q-values for only valid actions from this state
                 valid_q_values = {act: current_q_values.get(act, 0.0) for act in valid_actions}
-
                 if valid_q_values:
                     max_q = max(valid_q_values.values())
-                    # Get all actions with the max Q-value
                     best_actions = [act for act, q in valid_q_values.items() if q == max_q]
-                    chosen_action = random.choice(best_actions) # Randomly break ties
+                    chosen_action = random.choice(best_actions)
                 else:
-                    # If no Q-values known for valid actions, explore
                     chosen_action = random.choice(valid_actions)
+            if chosen_action is None: break
 
-            if chosen_action is None: break # Should not happen
-
-            # Apply action and get next state
             next_state_list = apply_action_to_state(current_state_list, chosen_action)
-            # Check if action was valid/successful
             if next_state_list is None:
-                # Penalize trying an invalid move? Or just don't update? Let's not update.
-                continue # Skip Q-update for invalid actions
+                continue
 
             next_state_tuple = state_to_tuple(next_state_list)
-            if next_state_tuple is None: continue # Resulting state invalid
+            if next_state_tuple is None: continue
 
-            # Define reward structure
-            reward = -1 # Default cost per step
+            reward = -1
             is_terminal = False
             if next_state_tuple == goal_state_tuple:
-                reward = 100 # Positive reward for reaching goal
+                reward = 100
                 is_terminal = True
 
-            # --- Q-value update ---
             old_q_value = q_table[current_state_tuple][chosen_action]
-
-            # Best Q-value for the *next* state (max_a' Q(s', a'))
-            # If next state is terminal, the value is 0 (no future rewards)
             next_q_state_values = q_table[next_state_tuple]
             max_q_next = 0.0
             if not is_terminal and next_q_state_values:
                 max_q_next = max(next_q_state_values.values())
 
-            # Q-learning formula
             new_q_value = old_q_value + learning_rate * (reward + discount_factor * max_q_next - old_q_value)
             q_table[current_state_tuple][chosen_action] = new_q_value
+            current_state_list = next_state_list
+            if is_terminal: break
 
-            # Move to the next state
-            current_state_list = next_state_list # Use the valid next state
-
-            if is_terminal:
-                break # End episode if goal reached
-
-        # Decay epsilon after each episode
         epsilon = max(epsilon_min, epsilon * epsilon_decay)
-
-        # Optional: Print progress
-        if (episode + 1) % (num_episodes // 10) == 0:
+        if (episode + 1) % (num_episodes // 10 or 1) == 0:
              print(f"  Q-Learn Episode {episode+1}/{num_episodes}. Epsilon={epsilon:.3f}. Q-table size={len(q_table)}")
 
-
-    # --- Training finished ---
     time_after_train = time.time()
-    print(f"Q-Learning: Training finished ({episode+1} episodes). Time: {time_after_train - start_time:.3f}s. Q-table size: {len(q_table)} states.")
+    print(f"Q-Learning: Training finished ({training_episodes_completed} episodes). Time: {time_after_train - start_time:.3f}s. Q-table size: {len(q_table)} states.")
 
-    # --- Path Extraction Phase ---
     print("Q-Learning: Extracting path...")
     path = [start_node_state]
     current_state_list = copy.deepcopy(start_node_state)
-    # Allow generous steps for extraction, but still limited
-    max_path_steps = max(500, max_steps_per_episode * 2) # More steps allowed for extraction
+    max_path_steps = max(500, max_steps_per_episode * 2)
 
     for step in range(max_path_steps):
-        # Check overall time limit during extraction as well
         if time.time() - start_time > time_limit:
             print("Q-Learning: Path extraction timeout.")
-            return path # Return path found so far
+            return path
 
         current_state_tuple = state_to_tuple(current_state_list)
         if current_state_tuple is None:
             print("Q-Learning Error: Invalid state tuple during path extraction.")
-            return path # Error state
+            return path
 
         if current_state_tuple == goal_state_tuple:
             print(f"Q-Learning: Path found in {len(path)-1} steps.")
-            return path # Goal reached
+            return path
 
-        # Choose the best action greedily (exploitation only)
         valid_actions = get_valid_actions(current_state_list)
         if not valid_actions:
             print("Q-Learning Warning: Stuck during path extraction (no valid actions).")
-            return path # Cannot proceed
+            return path
 
         current_q_values = q_table[current_state_tuple]
-        # Filter for valid actions
-        valid_q_action_values = {act: current_q_values.get(act, -float('inf')) for act in valid_actions} # Default to -inf if action wasn't seen
+        valid_q_action_values = {act: current_q_values.get(act, -float('inf')) for act in valid_actions}
 
         if not valid_q_action_values or all(q == -float('inf') for q in valid_q_action_values.values()):
-             # If no known positive Q-values for valid actions, maybe pick random valid?
-             print(f"Q-Learning Warning: No known positive Q-values for state {current_state_tuple}. Choosing random valid action.")
-             # Fallback: Choose a random valid action if policy is undefined or all values are -inf
+             # print(f"Q-Learning Warning: No known positive Q-values for state {current_state_tuple}. Choosing random valid action.")
              best_action = random.choice(valid_actions)
-
         else:
-            # Find the best action(s) based on learned Q-values
-            max_q = -float('inf')
-            best_actions = []
-            # Iterate through valid actions and their Q-values
-            for act, q_val in valid_q_action_values.items():
-                 if q_val > max_q:
-                      max_q = q_val
-                      best_actions = [act]
-                 elif q_val == max_q:
-                      best_actions.append(act)
-
-            if not best_actions: # Should not happen if valid_q_action_values wasn't empty
+            max_q_val = -float('inf') # Changed variable name to avoid conflict
+            best_actions_list = []    # Changed variable name
+            for act, q_val_act in valid_q_action_values.items(): # Changed variable name
+                 if q_val_act > max_q_val:
+                      max_q_val = q_val_act
+                      best_actions_list = [act]
+                 elif q_val_act == max_q_val:
+                      best_actions_list.append(act)
+            if not best_actions_list:
                  print("Q-Learning Error: Could not find best action despite having Q-values.")
-                 return path # Stuck
-            best_action = random.choice(best_actions) # Randomly break ties among best
+                 return path
+            best_action = random.choice(best_actions_list)
 
-
-        # Apply the chosen best action
         next_state_list = apply_action_to_state(current_state_list, best_action)
         if next_state_list is None:
             print(f"Q-Learning Error: Applying best action '{best_action}' failed during extraction.")
-            # This indicates a serious issue, maybe the state became invalid?
-            return path # Return path up to failure
+            return path
 
-        # Move to the next state and add to path
         path.append(next_state_list)
         current_state_list = next_state_list
 
     print(f"Q-Learning: Path extraction reached max steps ({max_path_steps}) without finding goal.")
-    return path # Return path found so far
+    return path
 
+# --- Genetic Algorithm Implementation ---
+# Helper structure for individuals in GA
+class GAIndividual:
+    def __init__(self, moves):
+        self.moves = list(moves) # Sequence of action strings
+        self.fitness = 0.0
+
+    def __lt__(self, other): # For sorting by fitness
+        return self.fitness < other.fitness # Note: sorte reverse=True for max fitness
+
+    def __repr__(self):
+        return f"Ind(fit={self.fitness:.2f}, moves_len={len(self.moves)}: {self.moves[:10]}{'...' if len(self.moves)>10 else ''})"
+
+# GA Configuration Constants
+GA_POPULATION_SIZE = 100
+GA_NUM_GENERATIONS = 100
+GA_MAX_INITIAL_MOVES = 35
+GA_MAX_MOVES_PER_INDIVIDUAL = 70
+GA_MUTATION_RATE = 0.1
+GA_POINT_MUTATION_RATE = 0.05
+GA_CROSSOVER_RATE = 0.8
+GA_TOURNAMENT_SIZE = 5
+GA_ELITISM_COUNT = 5
+
+def _ga_calculate_fitness(individual, start_state_list, goal_state_tuple_ga):
+    """Calculates fitness for an individual (sequence of moves).
+    Returns: (fitness_value, list_of_moves_to_goal_if_any_or_None)
+    """
+    current_s_list = copy.deepcopy(start_state_list)
+    path_taken_len = 0
+    goal_reached_at_step = -1
+    actual_moves_to_goal = None # Will store the truncated moves if goal is reached
+
+    if not is_valid_state_for_solve(current_s_list):
+        return 0.0, None
+
+    if not individual.moves: # Handle empty move sequence
+        md = manhattan_distance(current_s_list)
+        if md == float('inf'): return 0.0, None
+        max_md_approx = 30.0
+        fitness = (max_md_approx - md) / max_md_approx if max_md_approx > 0 else 0.5
+        return max(0.01, fitness), None
+
+
+    for i, move_action in enumerate(individual.moves):
+        next_s_list = apply_action_to_state(current_s_list, move_action)
+        if next_s_list is None: # Invalid move
+            md_before_fail = manhattan_distance(current_s_list)
+            if md_before_fail == float('inf'): return 0.0, None
+            return 1.0 / (1.0 + md_before_fail + (len(individual.moves) - i) * 5.0), None
+
+        current_s_list = next_s_list
+        path_taken_len += 1
+        current_s_tuple = state_to_tuple(current_s_list)
+
+        if current_s_tuple is None:
+            return 0.0, None
+
+        if current_s_tuple == goal_state_tuple_ga:
+            goal_reached_at_step = path_taken_len
+            actual_moves_to_goal = individual.moves[:path_taken_len] # Truncate moves
+            break
+    
+    if not is_valid_state_for_solve(current_s_list):
+         return 0.0, None
+
+    if goal_reached_at_step != -1 and actual_moves_to_goal is not None:
+        # Higher fitness for shorter paths to goal
+        return 1000.0 + (GA_MAX_MOVES_PER_INDIVIDUAL - goal_reached_at_step), actual_moves_to_goal
+    else:
+        md = manhattan_distance(current_s_list)
+        if md == float('inf'): return 0.0, None
+        max_md_approx = 30.0
+        fitness = (max_md_approx - md) / max_md_approx if max_md_approx > 0 else 0.5
+        fitness -= (len(individual.moves) / GA_MAX_MOVES_PER_INDIVIDUAL if GA_MAX_MOVES_PER_INDIVIDUAL > 0 else 0) * 0.1
+        return max(0.01, fitness), None
+
+
+def _ga_initialize_population(start_state_list, population_size, max_initial_moves):
+    population = []
+    for _ in range(population_size):
+        current_s_temp = copy.deepcopy(start_state_list)
+        moves_sequence = []
+        # Ensure max_initial_moves is at least 1 for randint
+        actual_max_initial_moves = max(1, max_initial_moves)
+        num_moves_for_this_individual = random.randint(max(1, actual_max_initial_moves//2), actual_max_initial_moves)
+
+        for _ in range(num_moves_for_this_individual):
+            if not is_valid_state_for_solve(current_s_temp):
+                break
+            valid_actions = get_valid_actions(current_s_temp)
+            if not valid_actions: break
+
+            chosen_action = random.choice(valid_actions)
+            next_s_temp = apply_action_to_state(current_s_temp, chosen_action)
+            if next_s_temp is None: break
+
+            moves_sequence.append(chosen_action)
+            current_s_temp = next_s_temp
+
+            if len(moves_sequence) >= GA_MAX_MOVES_PER_INDIVIDUAL: break
+        population.append(GAIndividual(moves_sequence))
+    return population
+
+def _ga_tournament_selection(population, tournament_size):
+    selected_parents = []
+    # Ensure tournament_size is not larger than population size
+    actual_tournament_size = min(tournament_size, len(population))
+    if actual_tournament_size == 0: return [] # Cannot select if population or tournament size is 0
+
+    for _ in range(len(population)):
+        tournament = random.sample(population, actual_tournament_size)
+        winner = max(tournament, key=lambda ind: ind.fitness)
+        selected_parents.append(winner)
+    return selected_parents
+
+def _ga_crossover(parent1, parent2):
+    if random.random() < GA_CROSSOVER_RATE:
+        len1, len2 = len(parent1.moves), len(parent2.moves)
+        if min(len1, len2) < 1: # If one parent is empty, crossover is tricky
+            # Return copies, or one combined with other's part
+            child1_moves = parent1.moves[:] + parent2.moves[len2//2:]
+            child2_moves = parent2.moves[:] + parent1.moves[len1//2:]
+        elif min(len1, len2) < 2 : # If one parent has only 1 move
+            point1 = 0 if len1 == 1 else random.randint(1, len1 -1)
+            point2 = 0 if len2 == 1 else random.randint(1, len2 -1)
+            child1_moves = parent1.moves[:point1] + parent2.moves[point2:]
+            child2_moves = parent2.moves[:point2] + parent1.moves[point1:]
+        else: # Both parents have at least 2 moves
+            point1 = random.randint(1, len1 -1)
+            point2 = random.randint(1, len2 -1)
+            child1_moves = parent1.moves[:point1] + parent2.moves[point2:]
+            child2_moves = parent2.moves[:point2] + parent1.moves[point1:]
+
+        child1_moves = child1_moves[:GA_MAX_MOVES_PER_INDIVIDUAL]
+        child2_moves = child2_moves[:GA_MAX_MOVES_PER_INDIVIDUAL]
+        return GAIndividual(child1_moves), GAIndividual(child2_moves)
+    else:
+        return GAIndividual(parent1.moves[:]), GAIndividual(parent2.moves[:])
+
+
+def _ga_mutate(individual, point_mutation_rate, start_state_for_validation):
+    mutated_flag = False
+    if random.random() < GA_MUTATION_RATE:
+        new_moves = list(individual.moves)
+
+        for i in range(len(new_moves)):
+            if random.random() < point_mutation_rate:
+                possible_actions = ['Up', 'Down', 'Left', 'Right']
+                current_move = new_moves[i]
+                possible_new_moves = [m for m in possible_actions if m != current_move]
+                if possible_new_moves:
+                    new_moves[i] = random.choice(possible_new_moves)
+                    mutated_flag = True
+
+        if random.random() < 0.2:
+            if random.random() < 0.5 and len(new_moves) < GA_MAX_MOVES_PER_INDIVIDUAL:
+                if len(new_moves) > 0: # Only insert if there are existing moves to determine position
+                    add_pos = random.randint(0, len(new_moves))
+                    random_action = random.choice(['Up', 'Down', 'Left', 'Right'])
+                    new_moves.insert(add_pos, random_action)
+                    mutated_flag = True
+                elif len(new_moves) == 0: # If empty, add one based on start state
+                     valid_initial_actions = get_valid_actions(start_state_for_validation)
+                     if valid_initial_actions:
+                         new_moves.append(random.choice(valid_initial_actions))
+                         mutated_flag = True
+
+            elif len(new_moves) > 1:
+                remove_pos = random.randint(0, len(new_moves) - 1)
+                del new_moves[remove_pos]
+                mutated_flag = True
+
+        if mutated_flag:
+            individual.moves = new_moves[:GA_MAX_MOVES_PER_INDIVIDUAL]
+
+        if not individual.moves and mutated_flag :
+            valid_initial_actions = get_valid_actions(start_state_for_validation)
+            if valid_initial_actions:
+                individual.moves = [random.choice(valid_initial_actions)]
+    return individual
+
+
+def genetic_algorithm_solve(start_node_state, time_limit=60):
+    start_time_ga = time.time()
+    if not is_valid_state_for_solve(start_node_state):
+        print("GA Error: Start state is invalid.")
+        return None
+    if not is_solvable(start_node_state):
+        print("GA Error: Start state is unsolvable.")
+        return None
+
+    goal_tuple_ga = state_to_tuple(goal_state_fixed_global)
+    if goal_tuple_ga is None:
+        print("GA Error: Goal state is invalid.")
+        return None
+
+    population = _ga_initialize_population(start_node_state, GA_POPULATION_SIZE, GA_MAX_INITIAL_MOVES)
+    if not population:
+        print("GA Error: Failed to initialize population.")
+        return None
+
+    # best_solution_individual stores an individual whose .moves are *exactly* the path to goal
+    best_solution_individual = None
+    best_fitness_overall = -float('inf')
+    # best_individual_ever stores the individual from population with highest raw fitness
+    best_individual_ever = population[0] if population else GAIndividual([])
+
+
+    print(f"GA: Starting ({GA_NUM_GENERATIONS} generations, pop_size={GA_POPULATION_SIZE}, time_limit={time_limit}s)...")
+    completed_generations = 0
+    for generation in range(GA_NUM_GENERATIONS):
+        completed_generations = generation + 1
+        if time.time() - start_time_ga > time_limit:
+            print(f"GA: Timeout during generation {generation + 1}/{GA_NUM_GENERATIONS}.")
+            break
+
+        for ind in population:
+            # _ga_calculate_fitness now returns (fitness_value, moves_to_goal_if_any)
+            fitness_val, moves_if_goal = _ga_calculate_fitness(ind, start_node_state, goal_tuple_ga)
+            ind.fitness = fitness_val # Store raw fitness for sorting and selection
+
+            if ind.fitness > best_fitness_overall:
+                best_fitness_overall = ind.fitness
+                best_individual_ever = copy.deepcopy(ind) # Stores the full chromosome individual
+
+            if moves_if_goal is not None: # Goal was reached by this individual
+                # The fitness_val is already the score for reaching the goal
+                if best_solution_individual is None or fitness_val > best_solution_individual.fitness:
+                    # Create/update best_solution_individual with the *truncated* moves
+                    best_solution_individual = GAIndividual(moves_if_goal)
+                    best_solution_individual.fitness = fitness_val # Store its achieving fitness
+                    # print(f"GA Gen {generation+1}: New best goal solution! Fitness: {best_solution_individual.fitness:.2f}, Moves: {len(best_solution_individual.moves)}")
+
+        # Early termination if a good enough goal-reaching solution is found
+        if best_solution_individual is not None and \
+           best_solution_individual.fitness >= 1000.0 + (GA_MAX_MOVES_PER_INDIVIDUAL - (GA_MAX_MOVES_PER_INDIVIDUAL * 0.5) ): # e.g. path length < half of max moves
+             # print(f"GA Gen {generation+1}: Good solution found ({len(best_solution_individual.moves)} moves). Terminating early.")
+             break
+
+        new_population = []
+        if not population:
+            print("GA Warning: Population empty mid-generation.")
+            break
+
+        population.sort(key=lambda i: i.fitness, reverse=True)
+        new_population.extend(population[:GA_ELITISM_COUNT])
+
+        if not new_population and GA_ELITISM_COUNT > 0 and population:
+             new_population.extend(population[:1])
+
+        parents_for_offspring_pool = _ga_tournament_selection(population, GA_TOURNAMENT_SIZE)
+        if not parents_for_offspring_pool:
+            parents_for_offspring_pool = population[:max(1, len(population)//2)]
+
+        attempt = 0
+        max_attempts_to_fill_pop = GA_POPULATION_SIZE * 3 # Increased attempts
+        while len(new_population) < GA_POPULATION_SIZE and attempt < max_attempts_to_fill_pop:
+            if not parents_for_offspring_pool: break
+
+            # Ensure there are at least two parents to choose from if possible
+            if len(parents_for_offspring_pool) < 2 and len(parents_for_offspring_pool) > 0:
+                 p1 = parents_for_offspring_pool[0]
+                 p2 = parents_for_offspring_pool[0] # Use same parent if only one
+            elif len(parents_for_offspring_pool) >= 2:
+                p1_idx, p2_idx = random.sample(range(len(parents_for_offspring_pool)), 2)
+                p1 = parents_for_offspring_pool[p1_idx]
+                p2 = parents_for_offspring_pool[p2_idx]
+            else: # No parents, shouldn't happen if fallback above works
+                break
+
+            child1, child2 = _ga_crossover(p1, p2)
+            child1 = _ga_mutate(child1, GA_POINT_MUTATION_RATE, start_node_state)
+            child2 = _ga_mutate(child2, GA_POINT_MUTATION_RATE, start_node_state)
+
+            if len(new_population) < GA_POPULATION_SIZE: new_population.append(child1)
+            if len(new_population) < GA_POPULATION_SIZE: new_population.append(child2)
+            attempt +=1
+
+        if len(new_population) < GA_POPULATION_SIZE and population: # Fill remaining with random from old pop
+            needed = GA_POPULATION_SIZE - len(new_population)
+            new_population.extend(random.sample(population, min(needed, len(population))))
+
+
+        population = new_population
+        if not population:
+            print("GA Error: Population became empty. Terminating.")
+            break
+
+        if (generation + 1) % (GA_NUM_GENERATIONS // 10 or 1) == 0:
+            current_best_gen_fitness = population[0].fitness if population else -1
+            print(f"  GA Gen {generation+1}/{GA_NUM_GENERATIONS}. Best pop fit: {current_best_gen_fitness:.2f}. Overall best raw: {best_fitness_overall:.2f}. Pop: {len(population)}")
+            if best_solution_individual:
+                print(f"    Best goal sol moves: {len(best_solution_individual.moves)}, fitness: {best_solution_individual.fitness:.2f}")
+
+    # --- After all generations ---
+    time_after_ga = time.time()
+    print(f"GA: Finished ({completed_generations} gens). Time: {time_after_ga - start_time_ga:.3f}s.")
+    print(f"GA: Best fitness overall during run: {best_fitness_overall:.2f}")
+    if best_individual_ever:
+        print(f"GA: Best individual_ever moves (full chromosome): {best_individual_ever.moves[:20]}{'...' if len(best_individual_ever.moves) > 20 else ''}")
+
+    final_solution_moves = None
+    source_of_moves = "None"
+
+    if best_solution_individual: # This individual's .moves are already truncated to goal
+        print(f"GA: A goal-reaching solution was recorded (fitness {best_solution_individual.fitness:.2f}) with {len(best_solution_individual.moves)} moves.")
+        final_solution_moves = best_solution_individual.moves
+        source_of_moves = "best_solution_individual (truncated to goal)"
+    elif best_individual_ever and best_individual_ever.moves :
+        print(f"GA: No explicit goal-reaching solution recorded. Falling back to best_individual_ever (fitness {best_individual_ever.fitness:.2f}) with {len(best_individual_ever.moves)} moves.")
+        final_solution_moves = best_individual_ever.moves # Use full chromosome here
+        source_of_moves = "best_individual_ever (fallback - full chromosome)"
+    else:
+        print("GA: No valid move sequence found by GA at all.")
+        return None # Return None if no path can be formed
+
+    if final_solution_moves:
+        # Ensure final_solution_moves is not empty before executing
+        if not final_solution_moves:
+            print(f"GA: Final selected moves from '{source_of_moves}' are empty. Cannot execute.")
+            # Return a path containing only the start state if moves are empty
+            if is_valid_state_for_solve(start_node_state): return [start_node_state]
+            return None
+
+        print(f"GA: Attempting to execute plan from '{source_of_moves}' with {len(final_solution_moves)} moves.")
+        solution_path = execute_plan(start_node_state, final_solution_moves)
+
+        if solution_path and len(solution_path) > 0 and solution_path[-1] is not None and is_valid_state_for_solve(solution_path[-1]):
+            if is_goal(solution_path[-1]):
+                print(f"GA: Path from '{source_of_moves}' (len {len(solution_path)-1}) successfully leads to goal: {solution_path[-1]}")
+            else:
+                # This case should be less frequent now for 'best_solution_individual'
+                print(f"GA: Path from '{source_of_moves}' (len {len(solution_path)-1}) does NOT lead to goal. Final state: {solution_path[-1]}, MD: {manhattan_distance(solution_path[-1])}")
+        elif solution_path and len(solution_path) > 0 and solution_path[-1] is None:
+             print(f"GA: Path from '{source_of_moves}' resulted in a None state at the end. Moves: {final_solution_moves}")
+        elif not solution_path: # execute_plan itself returned None
+            print(f"GA: Error executing plan from '{source_of_moves}'. Moves: {final_solution_moves}")
+            return None
+        return solution_path
+    else:
+        print("GA: No move sequence selected for execution.")
+        # Return a path containing only the start state if no moves can be executed
+        if is_valid_state_for_solve(start_node_state):
+            return [start_node_state]
+        return None
 
 # --- UI and Drawing Functions ---
 
@@ -1673,20 +1910,18 @@ def solver_selection_popup():
     title_rect_popup = title_surf_popup.get_rect(center=(POPUP_WIDTH // 2, 30))
     popup_surface.blit(title_surf_popup, title_rect_popup)
 
-    # Algorithms available *after* AC3 preprocessing
     solver_algorithms = [
         ('BFS', 'BFS'), ('DFS', 'DFS'), ('IDS', 'IDS'), ('UCS', 'UCS'),
         ('A*', 'A*'), ('Greedy', 'Greedy'), ('IDA*', 'IDA*'),
         ('Hill Climbing', 'Simple Hill'), ('Steepest Hill', 'Steepest Hill'),
         ('Stochastic Hill', 'Stochastic Hill'), ('SA', 'Simulated Annealing'),
         ('Beam Search', 'Beam Search'), ('AND-OR', 'AND-OR Search'),
-        ('Q-Learning', 'Q-Learning'), # Add Q-Learning here
+        ('Q-Learning', 'Q-Learning'), ('GA', 'Genetic Algorithm'),
     ]
     button_width_popup, button_height_popup = 150, 40
     button_margin_popup = 10
-    columns_popup = 3 # Adjust columns if needed
+    columns_popup = 3
     num_rows_popup = (len(solver_algorithms) + columns_popup - 1) // columns_popup
-    # Recalculate start Y if too many rows? Or assume it fits.
     start_x_popup = (POPUP_WIDTH - (columns_popup * button_width_popup + (columns_popup - 1) * button_margin_popup)) // 2
     start_y_popup = title_rect_popup.bottom + 30
 
@@ -1714,7 +1949,6 @@ def solver_selection_popup():
         mouse_pos_relative = (mouse_pos_screen[0] - popup_rect_on_screen.left,
                               mouse_pos_screen[1] - popup_rect_on_screen.top)
 
-        # Event Handling
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit(); sys.exit()
@@ -1725,25 +1959,24 @@ def solver_selection_popup():
                         selected_algorithm_name = algo_id_p; running_popup = False; break
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE: return None
 
-        # Drawing
         popup_surface.fill(INFO_BG)
         pygame.draw.rect(popup_surface, INFO_COLOR, border_rect, 4, border_radius=10)
         popup_surface.blit(title_surf_popup, title_rect_popup)
 
-        for algo_id_p, algo_name_p, btn_rect_p in algo_buttons_popup: # Draw Algo Buttons
+        for algo_id_p, algo_name_p, btn_rect_p in algo_buttons_popup:
             is_hovered_p = btn_rect_p.collidepoint(mouse_pos_relative)
             btn_color_p = MENU_HOVER_COLOR if is_hovered_p else MENU_BUTTON_COLOR
             pygame.draw.rect(popup_surface, btn_color_p, btn_rect_p, border_radius=8)
             text_surf_p = BUTTON_FONT.render(algo_name_p, True, WHITE)
             popup_surface.blit(text_surf_p, text_surf_p.get_rect(center=btn_rect_p.center))
 
-        is_hovered_cancel = cancel_button_rect_popup.collidepoint(mouse_pos_relative) # Draw Cancel
+        is_hovered_cancel = cancel_button_rect_popup.collidepoint(mouse_pos_relative)
         cancel_color = MENU_HOVER_COLOR if is_hovered_cancel else RED
         pygame.draw.rect(popup_surface, cancel_color, cancel_button_rect_popup, border_radius=8)
         cancel_text_surf_p = BUTTON_FONT.render("Cancel", True, WHITE)
         popup_surface.blit(cancel_text_surf_p, cancel_text_surf_p.get_rect(center=cancel_button_rect_popup.center))
 
-        screen.blit(popup_surface, popup_rect_on_screen) # Update Screen
+        screen.blit(popup_surface, popup_rect_on_screen)
         pygame.display.flip()
         clock_popup.tick(60)
 
@@ -1751,7 +1984,6 @@ def solver_selection_popup():
 
 
 def backtracking_selection_popup():
-    """Popup for selecting sub-algorithm for Backtracking meta-search."""
     popup_surface = pygame.Surface((POPUP_WIDTH, POPUP_HEIGHT))
     popup_surface.fill(INFO_BG)
     border_rect = popup_surface.get_rect()
@@ -1762,20 +1994,19 @@ def backtracking_selection_popup():
     title_rect_popup = title_surf_popup.get_rect(center=(POPUP_WIDTH // 2, 30))
     popup_surface.blit(title_surf_popup, title_rect_popup)
 
-    # Algorithms available for the backtracking meta-algorithm
     sub_algorithms = [
         ('BFS', 'BFS'), ('DFS', 'DFS'), ('IDS', 'IDS'), ('UCS', 'UCS'),
         ('A*', 'A*'), ('Greedy', 'Greedy'), ('IDA*', 'IDA*'),
         ('Hill Climbing', 'Simple Hill'), ('Steepest Hill', 'Steepest Hill'),
         ('Stochastic Hill', 'Stochastic Hill'), ('SA', 'Simulated Annealing'),
         ('Beam Search', 'Beam Search'), ('AND-OR', 'AND-OR Search'),
-        ('Sensorless', 'Sensorless Plan'), # Note: Needs template logic
-        ('Unknown', 'Unknown Env'),        # Note: Needs template logic
-        ('Q-Learning', 'Q-Learning'),     # Add Q-Learning
+        ('Sensorless', 'Sensorless Plan'),
+        ('Unknown', 'Unknown Env'),
+        ('Q-Learning', 'Q-Learning'), ('GA', 'Genetic Algorithm'),
     ]
     button_width_popup, button_height_popup = 150, 40
     button_margin_popup = 10
-    columns_popup = 3 # Adjust if needed
+    columns_popup = 3
     num_rows_popup = (len(sub_algorithms) + columns_popup - 1) // columns_popup
     start_x_popup = (POPUP_WIDTH - (columns_popup * button_width_popup + (columns_popup - 1) * button_margin_popup)) // 2
     start_y_popup = title_rect_popup.bottom + 30
@@ -1804,7 +2035,6 @@ def backtracking_selection_popup():
         mouse_pos_relative = (mouse_pos_screen[0] - popup_rect_on_screen.left,
                               mouse_pos_screen[1] - popup_rect_on_screen.top)
 
-        # Event Handling
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                  pygame.quit(); sys.exit()
@@ -1815,25 +2045,24 @@ def backtracking_selection_popup():
                         selected_algorithm_name = algo_id_p; running_popup = False; break
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE: return None
 
-        # Drawing
         popup_surface.fill(INFO_BG)
         pygame.draw.rect(popup_surface, INFO_COLOR, border_rect, 4, border_radius=10)
         popup_surface.blit(title_surf_popup, title_rect_popup)
 
-        for algo_id_p, algo_name_p, btn_rect_p in algo_buttons_popup: # Draw Algo Buttons
+        for algo_id_p, algo_name_p, btn_rect_p in algo_buttons_popup:
             is_hovered_p = btn_rect_p.collidepoint(mouse_pos_relative)
             btn_color_p = MENU_HOVER_COLOR if is_hovered_p else MENU_BUTTON_COLOR
             pygame.draw.rect(popup_surface, btn_color_p, btn_rect_p, border_radius=8)
             text_surf_p = BUTTON_FONT.render(algo_name_p, True, WHITE)
             popup_surface.blit(text_surf_p, text_surf_p.get_rect(center=btn_rect_p.center))
 
-        is_hovered_cancel = cancel_button_rect_popup.collidepoint(mouse_pos_relative) # Draw Cancel
+        is_hovered_cancel = cancel_button_rect_popup.collidepoint(mouse_pos_relative)
         cancel_color = MENU_HOVER_COLOR if is_hovered_cancel else RED
         pygame.draw.rect(popup_surface, cancel_color, cancel_button_rect_popup, border_radius=8)
         cancel_text_surf_p = BUTTON_FONT.render("Cancel", True, WHITE)
         popup_surface.blit(cancel_text_surf_p, cancel_text_surf_p.get_rect(center=cancel_button_rect_popup.center))
 
-        screen.blit(popup_surface, popup_rect_on_screen) # Update Screen
+        screen.blit(popup_surface, popup_rect_on_screen)
         pygame.display.flip()
         clock_popup.tick(60)
 
@@ -1845,61 +2074,54 @@ menu_surface = None
 total_menu_height = 0
 
 def draw_menu(show_menu_flag, mouse_pos_dm, current_selected_algorithm_dm):
-    """Draws the algorithm selection menu."""
     global scroll_y, menu_surface, total_menu_height
     menu_elements_dict = {}
 
-    # --- Draw Button to Open Menu (if menu is closed) ---
     if not show_menu_flag:
         menu_button_rect_dm = pygame.Rect(10, 10, 50, 40)
         pygame.draw.rect(screen, MENU_COLOR, menu_button_rect_dm, border_radius=5)
-        # Draw hamburger icon
         bar_width_dm, bar_height_dm, space_dm = 30, 4, 7
         start_x_dm = menu_button_rect_dm.centerx - bar_width_dm // 2
         start_y_dm = menu_button_rect_dm.centery - (bar_height_dm * 3 + space_dm * 2) // 2 + bar_height_dm // 2
         for i in range(3):
             pygame.draw.rect(screen, WHITE, (start_x_dm, start_y_dm + i * (bar_height_dm + space_dm), bar_width_dm, bar_height_dm), border_radius=2)
         menu_elements_dict['open_button'] = menu_button_rect_dm
-        return menu_elements_dict # Only return the open button rect
+        return menu_elements_dict
 
-    # --- Draw the Full Menu (if open) ---
     algorithms_list_dm = [
         ('AC3', 'AC3 Preprocessing'),
         ('Backtracking', 'Backtracking Search'),
         ('Sensorless', 'Sensorless Plan'),
         ('Unknown', 'Unknown Env'),
-        ('---', '--- Solvers ---'), # Separator
+        ('---', '--- Solvers ---'),
         ('BFS', 'BFS'), ('DFS', 'DFS'), ('IDS', 'IDS'), ('UCS', 'UCS'),
         ('A*', 'A*'), ('Greedy', 'Greedy'), ('IDA*', 'IDA*'),
         ('Hill Climbing', 'Simple Hill'), ('Steepest Hill', 'Steepest Hill'),
         ('Stochastic Hill', 'Stochastic Hill'), ('SA', 'Simulated Annealing'),
         ('Beam Search', 'Beam Search'), ('AND-OR', 'AND-OR Search'),
-        ('Q-Learning', 'Q-Learning'), # Added Q-Learning
+        ('Q-Learning', 'Q-Learning'), ('GA', 'Genetic Algorithm'),
     ]
 
-    # Calculate menu height and create surface if needed
     button_h_dm, padding_dm, button_margin_dm = 55, 10, 8
     total_menu_height = (len(algorithms_list_dm) * (button_h_dm + button_margin_dm)) - button_margin_dm + (2 * padding_dm)
-    display_height_menu_surf = max(total_menu_height, HEIGHT) # Ensure surface is at least screen height
+    display_height_menu_surf = max(total_menu_height, HEIGHT)
     if menu_surface is None or menu_surface.get_height() != display_height_menu_surf:
         menu_surface = pygame.Surface((MENU_WIDTH, display_height_menu_surf))
 
-    menu_surface.fill(MENU_COLOR) # Clear menu surface
-
-    # Draw buttons onto the menu surface
+    menu_surface.fill(MENU_COLOR)
     buttons_dict_dm = {}
     y_pos_current_button = padding_dm
-    mouse_x_rel_dm, mouse_y_rel_dm = mouse_pos_dm[0], mouse_pos_dm[1] + scroll_y # Mouse relative to scrollable content
+    mouse_x_rel_dm, mouse_y_rel_dm = mouse_pos_dm[0], mouse_pos_dm[1] + scroll_y
 
     for algo_id_dm, algo_name_dm in algorithms_list_dm:
         button_rect_local_dm = pygame.Rect(padding_dm, y_pos_current_button, MENU_WIDTH - 2 * padding_dm, button_h_dm)
 
-        if algo_id_dm == '---': # Draw separator
+        if algo_id_dm == '---':
             pygame.draw.line(menu_surface, GRAY, (button_rect_local_dm.left + 5, button_rect_local_dm.centery),
                                                   (button_rect_local_dm.right - 5, button_rect_local_dm.centery), 1)
             text_surf_dm = INFO_FONT.render(algo_name_dm, True, GRAY)
             menu_surface.blit(text_surf_dm, text_surf_dm.get_rect(center=button_rect_local_dm.center))
-        else: # Draw actual button
+        else:
             is_hover_dm = button_rect_local_dm.collidepoint(mouse_x_rel_dm, mouse_y_rel_dm)
             is_selected_dm = (current_selected_algorithm_dm == algo_id_dm)
             button_color_dm = MENU_SELECTED_COLOR if is_selected_dm else \
@@ -1907,32 +2129,25 @@ def draw_menu(show_menu_flag, mouse_pos_dm, current_selected_algorithm_dm):
             pygame.draw.rect(menu_surface, button_color_dm, button_rect_local_dm, border_radius=5)
             text_surf_dm = BUTTON_FONT.render(algo_name_dm, True, WHITE)
             menu_surface.blit(text_surf_dm, text_surf_dm.get_rect(center=button_rect_local_dm.center))
-            buttons_dict_dm[algo_id_dm] = button_rect_local_dm # Store rect relative to menu surface
-
+            buttons_dict_dm[algo_id_dm] = button_rect_local_dm
         y_pos_current_button += button_h_dm + button_margin_dm
 
-    # Blit the visible part of the menu surface onto the screen
     visible_menu_area_rect = pygame.Rect(0, scroll_y, MENU_WIDTH, HEIGHT)
     screen.blit(menu_surface, (0,0), visible_menu_area_rect)
 
-    # --- Draw Close Button (on top of the blitted menu) ---
-    close_button_rect_dm = pygame.Rect(MENU_WIDTH - 40, 10, 30, 30) # Position relative to screen
+    close_button_rect_dm = pygame.Rect(MENU_WIDTH - 40, 10, 30, 30)
     pygame.draw.rect(screen, RED, close_button_rect_dm, border_radius=5)
-    # Draw 'X' icon
     cx_dm, cy_dm = close_button_rect_dm.center
     pygame.draw.line(screen, WHITE, (cx_dm - 7, cy_dm - 7), (cx_dm + 7, cy_dm + 7), 3)
     pygame.draw.line(screen, WHITE, (cx_dm - 7, cy_dm + 7), (cx_dm + 7, cy_dm - 7), 3)
 
-    # Store UI element rectangles (relative to screen)
     menu_elements_dict['close_button'] = close_button_rect_dm
-    # Adjust button rects to be relative to screen for click detection
     screen_buttons_dict = {}
     for algo_id, rect_local in buttons_dict_dm.items():
-         screen_buttons_dict[algo_id] = rect_local.move(0, -scroll_y) # Adjust for scroll
+         screen_buttons_dict[algo_id] = rect_local.move(0, -scroll_y)
     menu_elements_dict['buttons'] = screen_buttons_dict
-    menu_elements_dict['menu_area'] = pygame.Rect(0, 0, MENU_WIDTH, HEIGHT) # Area on screen menu occupies
+    menu_elements_dict['menu_area'] = pygame.Rect(0, 0, MENU_WIDTH, HEIGHT)
 
-    # --- Draw Scrollbar (if needed) ---
     if total_menu_height > HEIGHT:
         scrollbar_track_height = HEIGHT - 2*padding_dm
         scrollbar_height_val = max(20, scrollbar_track_height * (HEIGHT / total_menu_height))
@@ -1942,34 +2157,30 @@ def draw_menu(show_menu_flag, mouse_pos_dm, current_selected_algorithm_dm):
         scrollbar_y_pos_thumb = scrollbar_track_y_start + scroll_ratio * (scrollbar_track_height - scrollbar_height_val)
         scrollbar_rect_dm = pygame.Rect(MENU_WIDTH - 10, scrollbar_y_pos_thumb, 6, scrollbar_height_val)
         pygame.draw.rect(screen, GRAY, scrollbar_rect_dm, border_radius=3)
-        menu_elements_dict['scrollbar_rect'] = scrollbar_rect_dm # Store scrollbar rect
-
+        menu_elements_dict['scrollbar_rect'] = scrollbar_rect_dm
     return menu_elements_dict
 
 
 def show_popup(message_str, title_str="Info"):
-    """Displays a modal popup message box."""
     popup_surface_sp = pygame.Surface((POPUP_WIDTH, POPUP_HEIGHT))
     popup_surface_sp.fill(INFO_BG)
     border_rect_sp = popup_surface_sp.get_rect()
     pygame.draw.rect(popup_surface_sp, INFO_COLOR, border_rect_sp, 4, border_radius=10)
 
-    # Title
     title_font_sp = pygame.font.SysFont('Arial', 28, bold=True)
     title_surf_sp = title_font_sp.render(title_str, True, INFO_COLOR)
     title_rect_sp = title_surf_sp.get_rect(center=(POPUP_WIDTH // 2, 30))
     popup_surface_sp.blit(title_surf_sp, title_rect_sp)
 
-    # Message Text (with word wrap)
     words_sp = message_str.replace('\n', ' \n ').split(' ')
     lines_sp = []
     current_line_sp = ""
-    text_width_limit_sp = POPUP_WIDTH - 60 # Padding
+    text_width_limit_sp = POPUP_WIDTH - 60
     line_height_sp = INFO_FONT.get_linesize()
-    max_lines_display = (POPUP_HEIGHT - title_rect_sp.bottom - 70) // line_height_sp # Available lines
+    max_lines_display = (POPUP_HEIGHT - title_rect_sp.bottom - 70) // line_height_sp
 
     for word_sp in words_sp:
-        if word_sp == '\n': # Handle explicit newlines
+        if word_sp == '\n':
             lines_sp.append(current_line_sp)
             current_line_sp = ""
             continue
@@ -1977,15 +2188,14 @@ def show_popup(message_str, title_str="Info"):
         line_width_sp, _ = INFO_FONT.size(test_line_sp)
         if line_width_sp <= text_width_limit_sp:
             current_line_sp = test_line_sp
-        else: # Word wrap
+        else:
             lines_sp.append(current_line_sp)
             current_line_sp = word_sp
-    lines_sp.append(current_line_sp) # Add last line
+    lines_sp.append(current_line_sp)
 
-    # Draw lines
     text_start_y_sp = title_rect_sp.bottom + 20
     for i, line_text_sp in enumerate(lines_sp):
-        if i >= max_lines_display: # Show ellipsis if too many lines
+        if i >= max_lines_display:
             ellipsis_surf = INFO_FONT.render("...", True, BLACK)
             popup_surface_sp.blit(ellipsis_surf, ( (POPUP_WIDTH - ellipsis_surf.get_width()) // 2, text_start_y_sp + i * line_height_sp))
             break
@@ -1993,14 +2203,12 @@ def show_popup(message_str, title_str="Info"):
         text_rect_sp = text_surf_sp.get_rect(centerx=POPUP_WIDTH // 2, top=text_start_y_sp + i * line_height_sp)
         popup_surface_sp.blit(text_surf_sp, text_rect_sp)
 
-    # OK Button
     ok_button_rect_sp = pygame.Rect(POPUP_WIDTH // 2 - 60, POPUP_HEIGHT - 65, 120, 40)
     pygame.draw.rect(popup_surface_sp, INFO_COLOR, ok_button_rect_sp, border_radius=8)
     ok_text_surf_sp = BUTTON_FONT.render("OK", True, WHITE)
     ok_text_rect_sp = ok_text_surf_sp.get_rect(center=ok_button_rect_sp.center)
     popup_surface_sp.blit(ok_text_surf_sp, ok_text_rect_sp)
 
-    # Blit popup to screen and wait for interaction
     popup_rect_on_screen_sp = popup_surface_sp.get_rect(center=(WIDTH // 2, HEIGHT // 2))
     screen.blit(popup_surface_sp, popup_rect_on_screen_sp)
     pygame.display.flip()
@@ -2012,7 +2220,6 @@ def show_popup(message_str, title_str="Info"):
                 pygame.quit(); sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouse_pos_screen = event.pos
-                # Convert click position relative to popup
                 mouse_rel_x = mouse_pos_screen[0] - popup_rect_on_screen_sp.left
                 mouse_rel_y = mouse_pos_screen[1] - popup_rect_on_screen_sp.top
                 if ok_button_rect_sp.collidepoint(mouse_rel_x, mouse_rel_y):
@@ -2020,26 +2227,23 @@ def show_popup(message_str, title_str="Info"):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN or event.key == pygame.K_ESCAPE:
                     waiting_for_ok = False
-        pygame.time.delay(20) # Prevent busy-waiting
+        pygame.time.delay(20)
 
 
 def draw_grid_and_ui(current_anim_state_dgui, show_menu_dgui, current_algo_name_dgui,
-                     solver_after_ac3_dgui, # Name of solver chosen after AC3, if any
-                     solve_times_dgui, # Dict {algo_name: time}
-                     last_solved_run_info_dgui, # Dict {algo_name_key: value}
+                     solver_after_ac3_dgui,
+                     solve_times_dgui,
+                     last_solved_run_info_dgui,
                      current_belief_state_size_dgui=None,
                      selected_cell_for_input_coords=None):
-    """Draws the main UI: grids, buttons, info panel, and calls draw_menu."""
     screen.fill(WHITE)
     mouse_pos_dgui = pygame.mouse.get_pos()
 
-    # Calculate main content area based on menu visibility
     main_area_x_offset = MENU_WIDTH if show_menu_dgui else 0
     main_area_width_dgui = WIDTH - main_area_x_offset
     center_x_main_area = main_area_x_offset + main_area_width_dgui // 2
 
-    # --- Top Row: Initial and Goal Grids ---
-    top_row_y_grids = GRID_PADDING + 40 # Extra space for title
+    top_row_y_grids = GRID_PADDING + 40
     grid_spacing_horizontal = GRID_PADDING * 1.5
     total_width_top_grids = 2 * GRID_DISPLAY_WIDTH + grid_spacing_horizontal
     start_x_top_grids = center_x_main_area - total_width_top_grids // 2
@@ -2052,15 +2256,12 @@ def draw_grid_and_ui(current_anim_state_dgui, show_menu_dgui, current_algo_name_
     draw_state(goal_state_fixed_global, goal_grid_x, top_row_y_grids, "Goal State",
                is_fixed_goal_display=True)
 
-    # --- Bottom Row: Controls, Current State, Info Panel ---
-    bottom_row_y_start = top_row_y_grids + GRID_DISPLAY_WIDTH + GRID_PADDING + 60 # Y-coord for bottom row elements
-
-    # Control Buttons (Left)
+    bottom_row_y_start = top_row_y_grids + GRID_DISPLAY_WIDTH + GRID_PADDING + 60
     button_width_ctrl, button_height_ctrl = 140, 45
     buttons_start_x = main_area_x_offset + GRID_PADDING
-    buttons_mid_y_anchor = bottom_row_y_start + GRID_DISPLAY_WIDTH // 2 # Vertical center for button column
+    buttons_mid_y_anchor = bottom_row_y_start + GRID_DISPLAY_WIDTH // 2
 
-    solve_button_y_pos = buttons_mid_y_anchor - button_height_ctrl * 2 - 16 # Stack buttons vertically
+    solve_button_y_pos = buttons_mid_y_anchor - button_height_ctrl * 2 - 16
     reset_solution_button_y_pos = solve_button_y_pos + button_height_ctrl + 8
     reset_all_button_y_pos = reset_solution_button_y_pos + button_height_ctrl + 8
     reset_initial_button_y_pos = reset_all_button_y_pos + button_height_ctrl + 8
@@ -2070,9 +2271,8 @@ def draw_grid_and_ui(current_anim_state_dgui, show_menu_dgui, current_algo_name_
     reset_all_button_rect_dgui = pygame.Rect(buttons_start_x, reset_all_button_y_pos, button_width_ctrl, button_height_ctrl)
     reset_initial_button_rect_dgui = pygame.Rect(buttons_start_x, reset_initial_button_y_pos, button_width_ctrl, button_height_ctrl)
 
-    # Draw Buttons
     pygame.draw.rect(screen, RED, solve_button_rect_dgui, border_radius=5)
-    screen.blit(BUTTON_FONT.render("SOLVE", True, WHITE), solve_button_rect_dgui.inflate(-20, -10)) # Basic centering
+    screen.blit(BUTTON_FONT.render("SOLVE", True, WHITE), solve_button_rect_dgui.inflate(-20, -10))
 
     pygame.draw.rect(screen, BLUE, reset_solution_button_rect_dgui, border_radius=5)
     rs_text = BUTTON_FONT.render("Reset Solution", True, WHITE)
@@ -2086,162 +2286,131 @@ def draw_grid_and_ui(current_anim_state_dgui, show_menu_dgui, current_algo_name_
     ri_text = BUTTON_FONT.render("Reset Display", True, WHITE)
     screen.blit(ri_text, ri_text.get_rect(center=reset_initial_button_rect_dgui.center))
 
-    # Current Animation State Grid (Middle)
     current_state_grid_x = buttons_start_x + button_width_ctrl + GRID_PADDING * 1.5
     current_state_grid_y = bottom_row_y_start
-
-    # Dynamic title for current state grid
-    current_state_title = f"Current ({current_algo_name_dgui}" # Base title
+    current_state_title = f"Current ({current_algo_name_dgui}"
     if current_algo_name_dgui == 'AC3' and solver_after_ac3_dgui:
-        current_state_title += f" -> {solver_after_ac3_dgui})" # Show AC3 sub-solver
+        current_state_title += f" -> {solver_after_ac3_dgui})"
     elif current_algo_name_dgui in ['Sensorless', 'Unknown']:
          if current_belief_state_size_dgui is not None and current_belief_state_size_dgui >= 0:
-             current_state_title = f"Belief States: {current_belief_state_size_dgui}" # Show belief size
+             current_state_title = f"Belief States: {current_belief_state_size_dgui}"
          else:
-             current_state_title = "Belief State (Template)" # Show template state
-    elif current_algo_name_dgui.startswith("BT("): # Backtracking title
-         current_state_title = f"Current ({current_algo_name_dgui})" # Already includes sub-algo
+             current_state_title = "Belief State (Template)"
+    elif current_algo_name_dgui.startswith("BT("):
+         current_state_title = f"Current ({current_algo_name_dgui})"
     else:
-        current_state_title += ")" # Close parenthesis for standard solvers
-
+        current_state_title += ")"
     draw_state(current_anim_state_dgui, current_state_grid_x, current_state_grid_y, current_state_title, is_current_anim_state=True)
 
-    # Info Panel (Right)
     info_area_x_pos = current_state_grid_x + GRID_DISPLAY_WIDTH + GRID_PADDING * 1.5
     info_area_y_pos = bottom_row_y_start
-    info_area_w = max(150, (main_area_x_offset + main_area_width_dgui) - info_area_x_pos - GRID_PADDING) # Fill remaining width
-    info_area_h = GRID_DISPLAY_WIDTH # Match height of current grid
+    info_area_w = max(150, (main_area_x_offset + main_area_width_dgui) - info_area_x_pos - GRID_PADDING)
+    info_area_h = GRID_DISPLAY_WIDTH
     info_area_rect_dgui = pygame.Rect(info_area_x_pos, info_area_y_pos, info_area_w, info_area_h)
 
-    pygame.draw.rect(screen, INFO_BG, info_area_rect_dgui, border_radius=8) # Background
-    pygame.draw.rect(screen, GRAY, info_area_rect_dgui, 2, border_radius=8) # Border
+    pygame.draw.rect(screen, INFO_BG, info_area_rect_dgui, border_radius=8)
+    pygame.draw.rect(screen, GRAY, info_area_rect_dgui, 2, border_radius=8)
 
-    # Display Solver Stats in Info Panel
     info_pad_x_ia, info_pad_y_ia = 15, 10
-    line_h_ia = INFO_FONT.get_linesize() + 4 # Spacing between lines
+    line_h_ia = INFO_FONT.get_linesize() + 4
     current_info_y_draw = info_area_y_pos + info_pad_y_ia
 
-    # Info Panel Title
     compare_title_surf_ia = TITLE_FONT.render("Solver Stats", True, BLACK)
     compare_title_x_ia = info_area_rect_dgui.centerx - compare_title_surf_ia.get_width() // 2
     screen.blit(compare_title_surf_ia, (compare_title_x_ia, current_info_y_draw))
     current_info_y_draw += compare_title_surf_ia.get_height() + 8
 
-    # Display results from solve_times_dgui and last_solved_run_info_dgui
     if solve_times_dgui:
-        # Sort by algorithm name for consistent display order
         sorted_times_list = sorted(solve_times_dgui.items(), key=lambda item: item[0])
-
         for algo_name_st, time_val_st in sorted_times_list:
-            # Prevent text overflow
             if current_info_y_draw + line_h_ia > info_area_y_pos + info_area_h - info_pad_y_ia:
                 screen.blit(INFO_FONT.render("...", True, BLACK), (info_area_x_pos + info_pad_x_ia, current_info_y_draw))
-                break # Stop drawing if no more space
+                break
 
-            # Get associated info (steps/actions, goal reached)
             actions_val_st = last_solved_run_info_dgui.get(f"{algo_name_st}_actions")
             steps_val_st = last_solved_run_info_dgui.get(f"{algo_name_st}_steps")
-            reached_goal_st = last_solved_run_info_dgui.get(f"{algo_name_st}_reached_goal", None) # Default to None if not set
+            reached_goal_st = last_solved_run_info_dgui.get(f"{algo_name_st}_reached_goal", None)
 
-            # Format steps/actions string
             count_str_st = ""
             if actions_val_st is not None: count_str_st = f" ({actions_val_st} actions)"
             elif steps_val_st is not None: count_str_st = f" ({steps_val_st} steps)"
-            # else: count_str_st = " (--)" # Omit if neither available
 
-            # Format goal indicator string
             goal_indicator_st = ""
             if reached_goal_st is False : goal_indicator_st = " (Not Goal)"
-            # Specific handling for plan-based failures
             elif (algo_name_st.startswith('Sensorless') or algo_name_st.startswith('Unknown') or \
-                  algo_name_st.startswith('BT(Sensorless') or algo_name_st.startswith('BT(Unknown')) and reached_goal_st is None:
+                  (algo_name_st.startswith('BT(') and ('Sensorless' in algo_name_st or 'Unknown' in algo_name_st))) and reached_goal_st is None: # Adjusted BT check
                  goal_indicator_st = " (Plan Fail)"
-            elif reached_goal_st is None and algo_name_st not in ['AC3', 'Backtracking']: # If run finished but goal status unknown (e.g., error, timeout before check)
+            elif reached_goal_st is None and algo_name_st not in ['AC3', 'Backtracking']:
                  goal_indicator_st = " (?)"
 
 
             base_str_st = f"{algo_name_st}: {time_val_st:.3f}s"
             full_comp_str = base_str_st + count_str_st + goal_indicator_st
 
-            # Truncate if too long (very basic truncation)
             max_text_width = info_area_w - 2 * info_pad_x_ia
             if INFO_FONT.size(full_comp_str)[0] > max_text_width:
-                 # Try removing step count first
                 shortened_str = base_str_st + goal_indicator_st
                 if INFO_FONT.size(shortened_str)[0] <= max_text_width:
                     full_comp_str = shortened_str
-                else: # Truncate name if still too long
-                    max_name_len = 18 # Adjust as needed
+                else:
+                    max_name_len = 18
                     name_part = algo_name_st
                     if len(name_part) > max_name_len: name_part = name_part[:max_name_len-3] + "..."
                     full_comp_str = f"{name_part}: {time_val_st:.3f}s{goal_indicator_st}"
 
-
             comp_surf_st = INFO_FONT.render(full_comp_str, True, BLACK)
             screen.blit(comp_surf_st, (info_area_x_pos + info_pad_x_ia, current_info_y_draw))
             current_info_y_draw += line_h_ia
-    else: # No results yet
+    else:
         no_results_surf = INFO_FONT.render("(No results yet)", True, GRAY)
         screen.blit(no_results_surf, (info_area_x_pos + info_pad_x_ia, current_info_y_draw))
 
-    # --- Draw Algorithm Menu ---
-    # Returns dict containing rects for menu elements (open/close buttons, algo buttons, menu area)
     menu_elements_dgui = draw_menu(show_menu_dgui, mouse_pos_dgui, current_algo_name_dgui)
-
-    # --- Final Flip ---
-    # pygame.display.flip() # Flip is called outside this function usually
-
-    # Return dictionary of important UI element rectangles for event handling
     initial_grid_rect_on_screen = pygame.Rect(initial_grid_x, top_row_y_grids, GRID_DISPLAY_WIDTH, GRID_DISPLAY_WIDTH)
     return {
         'solve_button': solve_button_rect_dgui,
         'reset_solution_button': reset_solution_button_rect_dgui,
         'reset_all_button': reset_all_button_rect_dgui,
         'reset_initial_button': reset_initial_button_rect_dgui,
-        'menu': menu_elements_dgui, # Contains sub-dictionary from draw_menu
-        'initial_grid_area': initial_grid_rect_on_screen # Rect for editable grid
+        'menu': menu_elements_dgui,
+        'initial_grid_area': initial_grid_rect_on_screen
     }
 
 
 # --- Main Game Loop ---
 def main():
-    global scroll_y, initial_state # Removed goal_state as it's fixed
+    global scroll_y, initial_state
 
-    # --- Game State Variables ---
     current_state_for_animation = copy.deepcopy(initial_state)
-    solution_path_anim = None # Stores the list of states for animation
-    action_plan_anim = None   # Stores list of actions (for Sensorless/Unknown)
+    solution_path_anim = None
+    action_plan_anim = None
     current_step_in_anim = 0
-    is_solving_flag = False # True when an algorithm is actively running
-    is_auto_animating_flag = False # True when solution path is being animated
+    is_solving_flag = False
+    is_auto_animating_flag = False
     last_anim_step_time = 0
-    show_algo_menu = False # Whether the algorithm selection menu is visible
-    current_selected_algorithm = 'A*' # Default algorithm selected in the menu
-    solver_algorithm_to_run = None # Actual algorithm function to call (set when SOLVE is pressed)
-    solver_name_for_stats = None # Name used for displaying stats (e.g., "AC3->A*")
-    all_solve_times = {} # Stores {solver_name: time}
-    last_run_solver_info = {} # Stores {solver_name_key: value} e.g., "A*_steps": 10
+    show_algo_menu = False
+    current_selected_algorithm = 'A*'
+    solver_algorithm_to_run = None
+    solver_name_for_stats = None
+    all_solve_times = {}
+    last_run_solver_info = {}
     game_clock = pygame.time.Clock()
-    ui_elements_rects = {} # Stores rectangles of UI elements from draw_grid_and_ui
+    ui_elements_rects = {}
     running_main_loop = True
-    backtracking_sub_algo_choice = None # Stores choice from backtracking popup
-    current_sensorless_belief_size_for_display = None # For UI display
-    selected_cell_for_input_coords = None # Tuple (row, col) if a cell in initial grid is selected
+    backtracking_sub_algo_choice = None
+    current_sensorless_belief_size_for_display = None
+    selected_cell_for_input_coords = None
 
-    # --- Main Loop ---
     while running_main_loop:
         mouse_pos_main = pygame.mouse.get_pos()
 
-        # --- Event Handling ---
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running_main_loop = False; break
 
-            # --- Mouse Button Down Events ---
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: # Left click
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 clicked_something_handled = False
 
-                # 1. Check Click on Initial Grid (for editing)
                 initial_grid_area_rect = ui_elements_rects.get('initial_grid_area')
                 if initial_grid_area_rect and initial_grid_area_rect.collidepoint(mouse_pos_main):
                     grid_offset_x = initial_grid_area_rect.left
@@ -2249,35 +2418,28 @@ def main():
                     clicked_col = (mouse_pos_main[0] - grid_offset_x) // CELL_SIZE
                     clicked_row = (mouse_pos_main[1] - grid_offset_y) // CELL_SIZE
                     if 0 <= clicked_row < GRID_SIZE and 0 <= clicked_col < GRID_SIZE:
-                        selected_cell_for_input_coords = (clicked_row, clicked_col) # Select cell
+                        selected_cell_for_input_coords = (clicked_row, clicked_col)
                     else:
-                        selected_cell_for_input_coords = None # Clicked outside cells
+                        selected_cell_for_input_coords = None
                     clicked_something_handled = True
-                # Deselect cell if clicking outside the grid while a cell is selected (and not on menu)
                 elif selected_cell_for_input_coords:
                      menu_area = ui_elements_rects.get('menu', {}).get('menu_area')
-                     # Deselect only if click is outside menu OR menu is closed
                      if not show_algo_menu or not (menu_area and menu_area.collidepoint(mouse_pos_main)):
                          selected_cell_for_input_coords = None
-                     # Don't mark handled yet, might be a button click
 
-                # 2. Check Clicks within the Algorithm Menu (if open)
                 if show_algo_menu and not clicked_something_handled:
                     menu_data = ui_elements_rects.get('menu', {})
                     menu_area = menu_data.get('menu_area')
-                    if menu_area and menu_area.collidepoint(mouse_pos_main): # Click is within menu area
-                        # Check Close button
+                    if menu_area and menu_area.collidepoint(mouse_pos_main):
                         close_btn_rect = menu_data.get('close_button')
                         if close_btn_rect and close_btn_rect.collidepoint(mouse_pos_main):
                             show_algo_menu = False; clicked_something_handled = True
 
-                        # Check Algorithm buttons (use screen-relative rects)
                         if not clicked_something_handled:
                             algo_buttons = menu_data.get('buttons', {})
                             for algo_id, btn_rect_screen in algo_buttons.items():
                                 if algo_id != '---' and btn_rect_screen.collidepoint(mouse_pos_main):
                                     if current_selected_algorithm != algo_id:
-                                        # Reset state if algorithm changes
                                         current_selected_algorithm = algo_id
                                         solver_algorithm_to_run = None
                                         solver_name_for_stats = None
@@ -2285,76 +2447,60 @@ def main():
                                         current_step_in_anim = 0; is_auto_animating_flag = False
                                         is_solving_flag = False
                                         current_sensorless_belief_size_for_display = None
-                                        # current_state_for_animation = copy.deepcopy(initial_state) # Keep display consistent until solve
-                                    show_algo_menu = False # Close menu on selection
+                                    show_algo_menu = False
                                     clicked_something_handled = True; break
-
-                        # If click was in menu area but not on close or algo button, still handle it
                         if not clicked_something_handled:
-                             clicked_something_handled = True # Prevent processing clicks outside menu
+                             clicked_something_handled = True
 
-                # 3. Check Click on Menu Open Button (if menu is closed)
                 elif not show_algo_menu and not clicked_something_handled:
                     menu_data = ui_elements_rects.get('menu', {})
                     open_btn_rect = menu_data.get('open_button')
                     if open_btn_rect and open_btn_rect.collidepoint(mouse_pos_main):
                         show_algo_menu = True; scroll_y = 0; clicked_something_handled = True
 
-                # 4. Check Clicks on Control Buttons (if nothing else handled)
                 if not clicked_something_handled:
                     solve_btn = ui_elements_rects.get('solve_button')
                     reset_sol_btn = ui_elements_rects.get('reset_solution_button')
                     reset_all_btn = ui_elements_rects.get('reset_all_button')
                     reset_disp_btn = ui_elements_rects.get('reset_initial_button')
 
-                    # --- SOLVE Button Click ---
                     if solve_btn and solve_btn.collidepoint(mouse_pos_main):
-                        if not is_auto_animating_flag and not is_solving_flag: # Prevent solving if already solving/animating
+                        if not is_auto_animating_flag and not is_solving_flag:
                             should_start_solving = False
-                            solver_algorithm_to_run = None # Reset chosen solver
-                            solver_name_for_stats = None   # Reset name for stats
-                            temp_state_for_solving = copy.deepcopy(initial_state) # Work on a copy
+                            solver_algorithm_to_run = None
+                            solver_name_for_stats = None
+                            temp_state_for_solving = copy.deepcopy(initial_state)
 
-                            # --- Logic based on selected algorithm type ---
-                            # a) AC3 Preprocessing
                             if current_selected_algorithm == 'AC3':
                                 has_empty_cells_ac3 = any(cell is None for row in temp_state_for_solving for cell in row)
                                 ac3_processed_state = None
-                                if has_empty_cells_ac3: # Try to fill None cells
+                                if has_empty_cells_ac3:
                                     filled_state_ac3 = ac3_fill_state(temp_state_for_solving)
-                                    if filled_state_ac3: # Successfully filled and solvable
-                                        initial_state = filled_state_ac3 # Update main initial state
+                                    if filled_state_ac3:
+                                        initial_state = filled_state_ac3
                                         ac3_processed_state = filled_state_ac3
-                                        current_state_for_animation = copy.deepcopy(initial_state) # Update display
+                                        current_state_for_animation = copy.deepcopy(initial_state)
                                         show_popup("AC3: State auto-completed and validated.", "AC3 Success")
-                                    else: # Could not fill to a solvable state
+                                    else:
                                         show_popup("AC3: Could not find a solvable completion.", "AC3 Failed")
-                                else: # State was already complete, just validate
+                                else:
                                     if is_valid_state_for_solve(temp_state_for_solving) and is_solvable(temp_state_for_solving):
-                                        ac3_processed_state = temp_state_for_solving # It's valid
+                                        ac3_processed_state = temp_state_for_solving
                                     else:
                                          show_popup("AC3: Initial state is complete but invalid or unsolvable.", "AC3 Validation Failed")
-
-                                # If AC3 produced a valid state, ask for sub-solver
                                 if ac3_processed_state is not None:
                                     solver_choice = solver_selection_popup()
                                     if solver_choice:
-                                        solver_algorithm_to_run = solver_choice # Set the actual solver
+                                        solver_algorithm_to_run = solver_choice
                                         solver_name_for_stats = f"AC3->{solver_choice}"
                                         should_start_solving = True
-
-                            # b) Backtracking Meta-Algorithm
                             elif current_selected_algorithm == 'Backtracking':
                                 sub_choice = backtracking_selection_popup()
                                 if sub_choice:
-                                    backtracking_sub_algo_choice = sub_choice # Store choice for later
-                                    solver_algorithm_to_run = 'Backtracking' # Set meta-solver
-                                    # solver_name_for_stats will be set later based on success
+                                    backtracking_sub_algo_choice = sub_choice
+                                    solver_algorithm_to_run = 'Backtracking'
                                     should_start_solving = True
-
-                            # c) Sensorless / Unknown Environment
                             elif current_selected_algorithm in ['Sensorless', 'Unknown']:
-                                # Validate the template structure (can contain None)
                                 is_valid_template = isinstance(temp_state_for_solving, list) and \
                                                     len(temp_state_for_solving) == GRID_SIZE and \
                                                     all(isinstance(r, list) and len(r)==GRID_SIZE for r in temp_state_for_solving) and \
@@ -2365,54 +2511,40 @@ def main():
                                     should_start_solving = True
                                 else:
                                      show_popup("Initial state structure is invalid for Unknown/Sensorless.", "Invalid Template")
-
-                            # d) Standard Solvers (BFS, A*, Q-Learning, etc.)
                             else:
-                                # Check if state is complete and valid for these solvers
                                 if not is_valid_state_for_solve(temp_state_for_solving):
                                      show_popup(f"Initial state must be complete and valid (0-8) for {current_selected_algorithm}.", "Invalid/Incomplete State")
-                                # Check if state is solvable
                                 elif not is_solvable(temp_state_for_solving):
                                      show_popup(f"The current initial state is not solvable.", "Unsolvable State")
-                                else: # Ready to solve
+                                else:
                                     solver_algorithm_to_run = current_selected_algorithm
                                     solver_name_for_stats = current_selected_algorithm
                                     should_start_solving = True
 
-                            # --- If checks passed, set flags to start solving process ---
                             if should_start_solving and solver_algorithm_to_run:
                                 is_solving_flag = True
-                                # Reset animation/result variables
                                 solution_path_anim = None; action_plan_anim = None
                                 current_step_in_anim = 0; is_auto_animating_flag = False
-                                current_sensorless_belief_size_for_display = None # Reset belief display
-                        clicked_something_handled = True # Mark click as handled
-
-                    # --- RESET Solution Button ---
+                                current_sensorless_belief_size_for_display = None
+                        clicked_something_handled = True
                     elif reset_sol_btn and reset_sol_btn.collidepoint(mouse_pos_main):
-                        current_state_for_animation = copy.deepcopy(initial_state) # Reset display to initial
+                        current_state_for_animation = copy.deepcopy(initial_state)
                         solution_path_anim = None; action_plan_anim = None
                         current_step_in_anim = 0
                         is_solving_flag = False; is_auto_animating_flag = False
                         current_sensorless_belief_size_for_display = None
-                        # Don't clear solve times or selected algorithm
                         clicked_something_handled = True
-
-                    # --- RESET ALL Button ---
                     elif reset_all_btn and reset_all_btn.collidepoint(mouse_pos_main):
-                        initial_state = copy.deepcopy(initial_state_fixed_global) # Reset initial to default
-                        current_state_for_animation = copy.deepcopy(initial_state) # Reset display
+                        initial_state = copy.deepcopy(initial_state_fixed_global)
+                        current_state_for_animation = copy.deepcopy(initial_state)
                         solution_path_anim = None; action_plan_anim = None
                         current_step_in_anim = 0
                         is_solving_flag = False; is_auto_animating_flag = False
-                        all_solve_times.clear() # Clear all stats
+                        all_solve_times.clear()
                         last_run_solver_info.clear()
                         current_sensorless_belief_size_for_display = None
-                        selected_cell_for_input_coords = None # Deselect cell
-                        # Keep current_selected_algorithm
+                        selected_cell_for_input_coords = None
                         clicked_something_handled = True
-
-                    # --- RESET Display Button (same as Reset Solution) ---
                     elif reset_disp_btn and reset_disp_btn.collidepoint(mouse_pos_main):
                         current_state_for_animation = copy.deepcopy(initial_state)
                         solution_path_anim = None; action_plan_anim = None
@@ -2421,27 +2553,19 @@ def main():
                         current_sensorless_belief_size_for_display = None
                         clicked_something_handled = True
 
-
-            # --- Mouse Wheel Event (for scrolling menu) ---
             elif event.type == pygame.MOUSEWHEEL and show_algo_menu:
                 menu_data = ui_elements_rects.get('menu', {})
                 menu_area = menu_data.get('menu_area')
-                # Check if mouse is over the menu area and if scrolling is needed
                 if menu_area and menu_area.collidepoint(mouse_pos_main) and total_menu_height > HEIGHT:
-                    scroll_amount_mw = event.y * 35 # Adjust scroll speed
-                    max_scroll_val = max(0, total_menu_height - HEIGHT) # Max scroll offset
-                    scroll_y = max(0, min(scroll_y - scroll_amount_mw, max_scroll_val)) # Clamp scroll_y
+                    scroll_amount_mw = event.y * 35
+                    max_scroll_val = max(0, total_menu_height - HEIGHT)
+                    scroll_y = max(0, min(scroll_y - scroll_amount_mw, max_scroll_val))
 
-            # --- Keydown Events (for editing initial state) ---
             elif event.type == pygame.KEYDOWN:
-                # Only allow editing if not solving/animating and a cell is selected
                 if not is_solving_flag and not is_auto_animating_flag and selected_cell_for_input_coords:
                     r, c = selected_cell_for_input_coords
-
-                    # Input numbers 0-8
                     if pygame.K_0 <= event.key <= pygame.K_8:
                         num = event.key - pygame.K_0
-                        # Check if number (non-zero) is already present elsewhere
                         can_place = True
                         if num != 0:
                             for row_idx, row_val in enumerate(initial_state):
@@ -2449,24 +2573,17 @@ def main():
                                     if cell_val == num and (row_idx != r or col_idx != c):
                                         can_place = False; break
                                 if not can_place: break
-
                         if can_place:
-                            initial_state[r][c] = num # Update the main initial state
-                            current_state_for_animation = copy.deepcopy(initial_state) # Update display immediately
-                            # Reset solution if initial state changes
+                            initial_state[r][c] = num
+                            current_state_for_animation = copy.deepcopy(initial_state)
                             solution_path_anim = None; action_plan_anim = None; current_step_in_anim = 0
-
-                    # Delete/Backspace: Set cell to None
                     elif event.key == pygame.K_DELETE or event.key == pygame.K_BACKSPACE:
                         if initial_state[r][c] is not None:
                              initial_state[r][c] = None
                              current_state_for_animation = copy.deepcopy(initial_state)
                              solution_path_anim = None; action_plan_anim = None; current_step_in_anim = 0
-
-                    # Deselect cell with Enter/Esc/Tab
                     elif event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN or event.key == pygame.K_TAB:
                          selected_cell_for_input_coords = None
-                    # Move selection with arrow keys
                     elif event.key == pygame.K_UP:
                          selected_cell_for_input_coords = ((r - 1 + GRID_SIZE) % GRID_SIZE, c)
                     elif event.key == pygame.K_DOWN:
@@ -2476,28 +2593,20 @@ def main():
                     elif event.key == pygame.K_RIGHT:
                          selected_cell_for_input_coords = (r, (c + 1) % GRID_SIZE)
 
+        if not running_main_loop: break
 
-        # --- End of Event Loop ---
-        if not running_main_loop: break # Exit if QUIT event occurred
-
-        # --- Solving Process (if is_solving_flag is True) ---
         if is_solving_flag:
-            is_solving_flag = False # Reset flag immediately
+            is_solving_flag = False
             solve_start_t = time.time()
-
-            # Reset result variables for this run
             found_path_algo = None
             found_action_plan_algo = None
-            actual_start_state_for_anim = None # Used by Backtracking
-            belief_size_at_end = 0 # Used by Sensorless
+            actual_start_state_for_anim = None
+            belief_size_at_end = 0
             error_during_solve = False
             error_message_solve = ""
 
-            # Ensure we have a valid solver name for stats
             if solver_name_for_stats is None: solver_name_for_stats = solver_algorithm_to_run
 
-            # --- Function Map for Solvers ---
-            # Includes Q-Learning now
             algo_func_map = {
                 'BFS': bfs, 'DFS': dfs, 'IDS': ids, 'UCS': ucs, 'A*': astar,
                 'Greedy': greedy, 'IDA*': ida_star,
@@ -2505,197 +2614,156 @@ def main():
                 'Stochastic Hill': random_hill_climbing, 'SA': simulated_annealing,
                 'Beam Search': beam_search, 'AND-OR': and_or_search,
                 'Sensorless': sensorless_search, 'Unknown': sensorless_search,
-                'Q-Learning': q_learning_train_and_solve, # Added Q-Learning
-                # Note: Backtracking is handled separately below
+                'Q-Learning': q_learning_train_and_solve,
+                'GA': genetic_algorithm_solve,
             }
 
             try:
-                state_to_solve_from = copy.deepcopy(initial_state) # Use the current initial state
-                current_state_for_animation = copy.deepcopy(state_to_solve_from) # Update display
+                state_to_solve_from = copy.deepcopy(initial_state)
+                current_state_for_animation = copy.deepcopy(state_to_solve_from)
 
-                # --- Handle Backtracking Meta-Algorithm ---
                 if solver_algorithm_to_run == 'Backtracking':
                     if backtracking_sub_algo_choice:
-                        # Call backtracking search with the chosen sub-algorithm
                         found_path_algo, error_message_solve, actual_start_state_for_anim, found_action_plan_algo = \
                             backtracking_search(backtracking_sub_algo_choice)
-
                         if found_path_algo and actual_start_state_for_anim:
-                            # If success, update initial state to the one that worked
                             initial_state = copy.deepcopy(actual_start_state_for_anim)
                             current_state_for_animation = copy.deepcopy(actual_start_state_for_anim)
-                            action_plan_anim = found_action_plan_algo # Store plan if sub-algo was plan-based
-                            solver_name_for_stats = f"BT({backtracking_sub_algo_choice})" # Update stats name
+                            action_plan_anim = found_action_plan_algo
+                            solver_name_for_stats = f"BT({backtracking_sub_algo_choice})"
                         else:
-                            # Backtracking failed or was cancelled
-                            solver_name_for_stats = f"BT({backtracking_sub_algo_choice})-Fail" # Indicate failure in name
-                        backtracking_sub_algo_choice = None # Reset choice
-                    else: # Should not happen if UI logic is correct
+                            solver_name_for_stats = f"BT({backtracking_sub_algo_choice})-Fail"
+                        backtracking_sub_algo_choice = None
+                    else:
                         error_message_solve = "Backtracking sub-algorithm choice missing."; error_during_solve = True
-
-                # --- Handle Sensorless / Unknown ---
                 elif solver_algorithm_to_run in ['Sensorless', 'Unknown']:
-                    # Pass the (potentially incomplete) initial state as the template
                     found_action_plan_algo, belief_size_at_end = sensorless_search(state_to_solve_from, time_limit=60)
-                    current_sensorless_belief_size_for_display = belief_size_at_end # Update UI display info
+                    current_sensorless_belief_size_for_display = belief_size_at_end
                     if found_action_plan_algo is not None:
-                        action_plan_anim = found_action_plan_algo # Store the plan
-                        # Generate a sample start state from belief for visualization
+                        action_plan_anim = found_action_plan_algo
                         sample_belief_states = generate_belief_states(state_to_solve_from)
-                        vis_start_state = state_to_solve_from # Default to template if generation fails
+                        vis_start_state = state_to_solve_from
                         if sample_belief_states: vis_start_state = sample_belief_states[0]
-                        # Execute plan on sample state to get path for animation
                         if is_valid_state_for_solve(vis_start_state):
                              found_path_algo = execute_plan(vis_start_state, found_action_plan_algo)
-                        else: found_path_algo = None # Cannot visualize invalid sample
-                        # Update display to show the sample start state
+                        else: found_path_algo = None
                         current_state_for_animation = copy.deepcopy(vis_start_state)
-                    # else: Plan search failed
-
-                # --- Handle Standard Solvers (including Q-Learning) ---
                 else:
                     selected_algo_function = algo_func_map.get(solver_algorithm_to_run)
                     if selected_algo_function:
-                        # Prepare arguments (state + time_limit + specific params)
                         algo_args_list = [state_to_solve_from]
                         func_varnames = selected_algo_function.__code__.co_varnames[:selected_algo_function.__code__.co_argcount]
 
-                        # Determine appropriate time limit
                         default_time_limit = 30
-                        # Give more time to known slower algorithms
-                        if solver_algorithm_to_run in ['IDA*', 'IDS', 'Q-Learning']: default_time_limit = 60
+                        if solver_algorithm_to_run in ['IDA*', 'IDS', 'Sensorless', 'Unknown', 'Q-Learning', 'GA']:
+                            default_time_limit = 60
 
                         if 'time_limit' in func_varnames:
                             algo_args_list.append(default_time_limit)
-                        # Add other parameters based on function signature
                         elif solver_algorithm_to_run == 'DFS' and 'max_depth' in func_varnames: algo_args_list.append(30)
                         elif solver_algorithm_to_run == 'IDS' and 'max_depth_limit' in func_varnames: algo_args_list.append(30)
                         elif solver_algorithm_to_run == 'Stochastic Hill' and 'max_iter_no_improve' in func_varnames: algo_args_list.append(500)
                         elif solver_algorithm_to_run == 'Beam Search' and 'beam_width' in func_varnames: algo_args_list.append(5)
-                        # Q-Learning just takes time_limit, handled above
 
-                        # Call the solver function
                         found_path_algo = selected_algo_function(*algo_args_list)
-                        action_plan_anim = None # Standard solvers return path, not plan
+                        action_plan_anim = None
                     else:
                          error_message_solve = f"Algorithm function for '{solver_algorithm_to_run}' not found."; error_during_solve = True
-
             except Exception as e:
                 error_message_solve = f"Runtime Error during {solver_name_for_stats} solve:\n{traceback.format_exc()}"
                 error_during_solve = True
-                action_plan_anim = None; found_path_algo = None # Clear results on error
+                action_plan_anim = None; found_path_algo = None
 
-            # --- Post-Solving: Record Stats and Handle Results ---
             solve_duration_t = time.time() - solve_start_t
-            # Ensure stats name is valid before recording
             if solver_name_for_stats:
                  all_solve_times[solver_name_for_stats] = solve_duration_t
-            else: # Fallback if name wasn't set
-                 all_solve_times[f"UnknownRun@{solve_start_t}"] = solve_duration_t
-                 solver_name_for_stats = f"UnknownRun@{solve_start_t}" # Use a temporary name
+            else:
+                 temp_solver_name = f"UnknownRun@{solve_start_t:.0f}" # Make it a bit more readable
+                 all_solve_times[temp_solver_name] = solve_duration_t
+                 solver_name_for_stats = temp_solver_name
 
 
             if error_during_solve:
                 show_popup(error_message_solve if error_message_solve else "An unknown error occurred.", "Solver Error")
-                # Clear potentially inconsistent info for this run
                 last_run_solver_info.pop(f"{solver_name_for_stats}_reached_goal", None)
                 last_run_solver_info.pop(f"{solver_name_for_stats}_steps", None)
                 last_run_solver_info.pop(f"{solver_name_for_stats}_actions", None)
             else:
-                # Check if a result (path or plan) was found
                 result_found = (action_plan_anim is not None) or \
                                (found_path_algo and len(found_path_algo) > 0)
-
                 if result_found:
-                    solution_path_anim = found_path_algo # Store path for animation (even if from plan)
+                    solution_path_anim = found_path_algo
                     current_step_in_anim = 0
-                    # Start animation only if a path exists
                     is_auto_animating_flag = (solution_path_anim is not None and len(solution_path_anim) > 1)
                     last_anim_step_time = time.time()
 
-                    # Determine success state and steps/actions count
-                    is_actually_goal_state = False # Default assumption
+                    is_actually_goal_state = False
                     num_steps_or_actions = 0
                     popup_msg = ""
-
                     is_plan_based = solver_algorithm_to_run in ['Sensorless', 'Unknown'] or \
-                                    solver_name_for_stats.startswith('BT(Sensorless') or \
-                                    solver_name_for_stats.startswith('BT(Unknown')
+                                    (solver_name_for_stats and (solver_name_for_stats.startswith('BT(Sensorless') or \
+                                                                solver_name_for_stats.startswith('BT(Unknown')))
 
-                    # Handle Plan-Based Results
                     if is_plan_based:
-                         if action_plan_anim is not None: # Plan found
+                         if action_plan_anim is not None:
                             num_steps_or_actions = len(action_plan_anim)
                             last_run_solver_info[f"{solver_name_for_stats}_actions"] = num_steps_or_actions
-                            # For sensorless, success means plan guarantees goal eventually
-                            is_actually_goal_state = True # Mark as successful plan
+                            is_actually_goal_state = True
                             popup_msg = f"{solver_name_for_stats}: Plan found!\n{num_steps_or_actions} actions."
-                            # Add note about visualization if applicable
-                            if solver_algorithm_to_run in ['Sensorless', 'Unknown']: # Not BT case
+                            if solver_algorithm_to_run in ['Sensorless', 'Unknown']:
                                 popup_msg += "\n(Visualizing plan on one sample state)"
-                         else: # Plan search failed
-                            is_actually_goal_state = None # Special status for plan failure
+                         else:
+                            is_actually_goal_state = None
                             popup_msg = f"{solver_name_for_stats}: Plan search failed."
-                            # Ensure goal status reflects failure
                             last_run_solver_info[f"{solver_name_for_stats}_reached_goal"] = None
-
-                    # Handle Path-Based Results (BFS, A*, Q-Learning, Hill Climb, etc.)
-                    else:
-                        if solution_path_anim: # Path was returned
+                    else: # Path-based (BFS, A*, Q-Learning, GA, Hill Climb, etc.)
+                        if solution_path_anim and len(solution_path_anim) > 0:
                              final_state_of_path = solution_path_anim[-1]
-                             # Check if final state is actually the goal
-                             if isinstance(final_state_of_path, list):
+                             # Check if final state is actually the goal and valid
+                             if isinstance(final_state_of_path, list) and is_valid_state_for_solve(final_state_of_path):
                                  is_actually_goal_state = is_goal(final_state_of_path)
-                             # else: path format error, goal assumed false
-                             num_steps_or_actions = max(0, len(solution_path_anim) - 1) # Steps = path length - 1
+                             else: # Path format error, or invalid final state
+                                 is_actually_goal_state = False
+                                 # print(f"Warning: final state in path for {solver_name_for_stats} is invalid or not list: {final_state_of_path}")
+
+
+                             num_steps_or_actions = max(0, len(solution_path_anim) - 1)
                              last_run_solver_info[f"{solver_name_for_stats}_steps"] = num_steps_or_actions
                              popup_msg = f"{solver_name_for_stats} "
                              if is_actually_goal_state:
                                  popup_msg += f"found solution!\n{num_steps_or_actions} steps."
                              else:
                                  popup_msg += f"finished.\n{num_steps_or_actions} steps (Not Goal)."
-                        else: # No path returned (e.g., timeout before finding anything)
+                        else:
                              is_actually_goal_state = False
-                             popup_msg = f"{solver_name_for_stats}: No valid path found."
+                             popup_msg = f"{solver_name_for_stats}: No valid path returned."
 
-                    # Record goal status consistently
-                    if is_actually_goal_state is not None: # Exclude Plan Fail case
+                    if is_actually_goal_state is not None:
                          last_run_solver_info[f"{solver_name_for_stats}_reached_goal"] = is_actually_goal_state
 
-                    # Show summary popup
                     popup_msg += f"\nTime: {solve_duration_t:.3f}s"
                     popup_title = "Solve Complete" if is_actually_goal_state is True else \
                                   ("Plan Search Failed" if is_actually_goal_state is None else "Search Finished")
                     show_popup(popup_msg, popup_title)
-
-                else: # No result found (no path, no plan)
+                else:
                     last_run_solver_info[f"{solver_name_for_stats}_reached_goal"] = False
                     last_run_solver_info.pop(f"{solver_name_for_stats}_steps", None)
                     last_run_solver_info.pop(f"{solver_name_for_stats}_actions", None)
-
-                    # Construct appropriate failure message
                     no_solution_msg = error_message_solve if error_message_solve else f"No solution/path found by {solver_name_for_stats}."
-
-                    # Check if timeout likely occurred based on duration
-                    used_time_limit_for_msg = 30 # Default limit
-                    if solver_algorithm_to_run in ['IDA*', 'IDS', 'Sensorless', 'Unknown', 'Backtracking', 'Q-Learning']:
-                        used_time_limit_for_msg = 60 # Higher limit for these
-
-                    if solve_duration_t >= used_time_limit_for_msg * 0.98 : # Approx check
+                    used_time_limit_for_msg = 30
+                    if solver_algorithm_to_run in ['IDA*', 'IDS', 'Sensorless', 'Unknown', 'Backtracking', 'Q-Learning', 'GA']:
+                        used_time_limit_for_msg = 60
+                    if solve_duration_t >= used_time_limit_for_msg * 0.98 :
                          no_solution_msg = f"{solver_name_for_stats} timed out after ~{used_time_limit_for_msg}s."
-
                     show_popup(no_solution_msg, "No Solution / Timeout")
 
-            # Reset solver choice after run attempt
             solver_algorithm_to_run = None
             solver_name_for_stats = None
-            backtracking_sub_algo_choice = None # Clear backtracking choice
+            backtracking_sub_algo_choice = None
 
 
-        # --- Animation Update (if animating) ---
         if is_auto_animating_flag and solution_path_anim:
             current_time_anim = time.time()
-            # Adjust animation speed based on path length
             anim_delay_val = 0.3
             if len(solution_path_anim) > 30: anim_delay_val = 0.15
             if len(solution_path_anim) > 60: anim_delay_val = 0.08
@@ -2704,49 +2772,40 @@ def main():
                 if current_step_in_anim < len(solution_path_anim) - 1:
                     current_step_in_anim += 1
                     next_anim_state = solution_path_anim[current_step_in_anim]
-                    # Ensure the next state is valid before updating animation
                     if next_anim_state and isinstance(next_anim_state, list) and len(next_anim_state) == GRID_SIZE:
                         current_state_for_animation = copy.deepcopy(next_anim_state)
                     else:
-                        # print("Error: Invalid state encountered during animation.")
-                        is_auto_animating_flag = False # Stop animation if state is bad
+                        is_auto_animating_flag = False
                     last_anim_step_time = current_time_anim
-                else: # Reached end of animation path
+                else:
                     is_auto_animating_flag = False
 
 
-        # --- Dynamic Belief State Size Update (for UI) ---
-        # Only update if relevant algo selected and not currently solving/animating
-        belief_size_for_display = current_sensorless_belief_size_for_display # Use value calculated during solve if available
-        active_algo_display_name = solver_name_for_stats if solver_name_for_stats else current_selected_algorithm # Show solver name if running/just finished
+        belief_size_for_display = current_sensorless_belief_size_for_display
+        active_algo_display_name = solver_name_for_stats if solver_name_for_stats else current_selected_algorithm
 
         if active_algo_display_name in ['Sensorless', 'Unknown'] and belief_size_for_display is None and not is_solving_flag and not is_auto_animating_flag:
-             # Calculate belief size from current initial_state if needed for display
              try:
-                 if isinstance(initial_state, list): # Basic check
-                     # Use generate_belief_states to get the count
+                 if isinstance(initial_state, list):
                      temp_initial_bs = generate_belief_states(initial_state)
                      belief_size_for_display = len(temp_initial_bs) if temp_initial_bs is not None else 0
-                 else: belief_size_for_display = 0 # Invalid initial state format
-             except Exception: belief_size_for_display = 0 # Error during generation
+                 else: belief_size_for_display = 0
+             except Exception: belief_size_for_display = 0
 
 
-        # --- Draw Everything ---
         ui_elements_rects = draw_grid_and_ui(
             current_state_for_animation, show_algo_menu,
-            current_selected_algorithm, # Pass the *selected* algo name for title
-            solver_name_for_stats,      # Pass the *running/ran* solver name (might be None or AC3->X)
+            current_selected_algorithm,
+            solver_name_for_stats,
             all_solve_times,
             last_run_solver_info,
-            belief_size_for_display,    # Pass calculated/stored belief size
-            selected_cell_for_input_coords # Pass selected cell for highlight
+            belief_size_for_display,
+            selected_cell_for_input_coords
         )
 
-        # --- Update Display and Tick Clock ---
         pygame.display.flip()
-        game_clock.tick(60) # Limit FPS
+        game_clock.tick(60)
 
-    # --- End of Main Loop ---
     pygame.quit()
 
 
@@ -2760,3 +2819,4 @@ if __name__ == "__main__":
         print("------------------------------------")
         pygame.quit()
         sys.exit(1)
+
