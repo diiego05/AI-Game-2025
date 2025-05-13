@@ -20,10 +20,10 @@
   - Giải pháp (Solution): chuỗi các hành động dẫn đến trạng thái đích.
     
   **Các thuật toán trong nhóm**
-  - **BFS (Breadth-First Search)** <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExN3l1ZTlyOGM2amF0ZG1rMnlocnhnY3FqZWY2MXcwNHhrcW83YW9leCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/GaOHKrpTiawcvoUjdZ/giphy.gif" alt="BFS" width="300"/>
-  - **DFS (Depth-First Search)** <img src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTY1NnExam5wdTgzY2s0cTZ0c2NpaXBibHV0eWJ5ZDl3dG12ZHQ4eCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/BLLDvdAt5X7spkifaK/giphy.gif" alt="DFS" width="300"/>
-  - **IDS (Iterative Deepening Search)** <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcXY2N2t3d3RsbjExcXppeThoMnA3a3loOHF4MXV0NXU0NXpnOHJpMyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/OgmVGLCc8j93VRUSJP/giphy.gif" alt="IDS" width="300"/>
-  - **UCS (Uniform Cost Search)** <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExN2ZtZGhqcDN4b3pkaWxidnhld3g5dHd1anNtNW9xN2k0bnljdnA2biZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/OFBhqteP3EwAEelSFt/giphy.gif" alt="UCS" width="300"/>
+  - **BFS (Breadth-First Search)** <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExNmdjbDljbjduMWgxbWh1Y2FqeDVwM2o4OWt6cHk4ajk4bjYwYWl0ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/MhKI9xRgsd9qbB3w4l/giphy.gif" alt="BFS" width="300"/>
+  - **DFS (Depth-First Search)** <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExbmxkYzE5bDBxNzI0NWZwNXV0YTltbmh1a3dsOTRyY21wdG92aGxuYiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/KiE00EVn6ELXAQNCqS/giphy.gif" alt="DFS" width="300"/>
+  - **IDS (Iterative Deepening Search)** <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExcWdrY3QyeTRucXJtdWcxMnJmcTNiZXE4eDF4ODRtZ2g0M3Njc2ZlaiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/wvUpiBW45iZGRzsNWc/giphy.gif" alt="IDS" width="300"/>
+  - **UCS (Uniform Cost Search)** <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExcmZlOTJpYXB2cGlrNm9wZnhrcXpmZDkxazFhbG0zcjV4YnJzcnE1aSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/5v6NQODQS7JlVC7FOk/giphy.gif" alt="UCS" width="300"/>
 
    **Hiệu suất giữa các thuật toán** <img src="https://github.com/user-attachments/assets/3cfda135-790c-486c-9db8-ea5496adfcaf" alt="hieu suat trong nhom 1" width="300"/>
    
@@ -126,8 +126,8 @@
   - **AC3**
   - AC3 cho 3 thuật toán: A*, BFS, Simulated Annealing:
       - <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTZwcGpjeWZyYTY4NmhxZzczaW05bG5wYm9kZHg0NmNmMGlsMHo5aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/x1r2mwIzYz2gjT5tIf/giphy.gif" alt="AC3(A*)" width="300"/>
-       - <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExdjVwc2NiMnI0N2pqbWoxanpuZ3d0Ynkwam1kbW15MHM2MW16ejJ3aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/1mVGDqDy9ajosWzUAL/giphy.gif" alt="AC3(BFS)" width="300"/>
-        - <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcnZhanBpcGQyNzBndmNjenFmcm96emppZDVtaXV4NHR3ejcwbGY1ciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/VOs5QIt3V6QZ3jtJ2J/giphy.gif" alt="AC3(SA)" width="300"/>
+      - <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExdjVwc2NiMnI0N2pqbWoxanpuZ3d0Ynkwam1kbW15MHM2MW16ejJ3aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/1mVGDqDy9ajosWzUAL/giphy.gif" alt="AC3(BFS)" width="300"/>
+      - <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcnZhanBpcGQyNzBndmNjenFmcm96emppZDVtaXV4NHR3ejcwbGY1ciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/VOs5QIt3V6QZ3jtJ2J/giphy.gif" alt="AC3(SA)" width="300"/>
         
   **Hiệu suất giữa các thuật toán**
   - Hiệu suất Backtracking
