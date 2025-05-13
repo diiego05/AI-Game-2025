@@ -88,6 +88,7 @@
     
   ### 2.4 Các thuật toán tìm kiếm trong môi trường phức tạp (Complex Environment Search)
   - Trạng thái không hoàn toàn quan sát được hoặc môi trường thay đổi. Trạng thái ban đầu có thể chứa None → cần sinh ra belief state.
+    
   **Thành phần bài toán:**
   - Trạng thái không quan sát được hoàn toàn, hoặc thay đổi trong thời gian thực.
   - Cần xác định kế hoạch đảm bảo đạt đích trong mọi kịch bản.
@@ -111,6 +112,7 @@
     
   ### 2.5 Các thuật toán tìm kiếm trong môi trường có ràng buộc (Constraint-Based Search - CSP)
   - Các thuật toán tìm kiếm trong môi trường có ràng buộc (Constraint-Based Search) được thiết kế để giải quyết bài toán thỏa mãn ràng buộc (Constraint Satisfaction Problem - CSP), nơi mà mục tiêu là tìm một hoặc nhiều giá trị cho các biến sao cho thỏa mãn một tập các ràng buộc đã cho
+    
   **Thành phần bài toán:**
   - Trạng thái không quan sát được hoàn toàn, hoặc thay đổi trong thời gian thực.
   - Cần xác định kế hoạch đảm bảo đạt đích trong mọi kịch bản.
@@ -154,6 +156,7 @@
     
   ### 2.6 Học tăng cường (Reinforcement Learning)
   - Tìm chính sách hành động tối ưu (optimal policy) cho một agent (tác nhân) trong môi trường sao cho phần thưởng tích lũy là lớn nhất
+    
   **Thành phần bài toán:**
   - Agent (tác tử) tương tác với môi trường để học hành động tối ưu qua thử và sai (trial and error)..
   - Phần thưởng (Reward) được cấp dựa trên hành động dẫn đến trạng thái mục tiêu.
