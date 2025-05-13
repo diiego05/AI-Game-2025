@@ -166,7 +166,7 @@
   **Các thuật toán trong nhóm**
   - **Q-Learning** <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExcnBic2w3Y3R1cmNzbXBrOXVlODF1bTViMTF6bDF5b2pydnE2MXd5dCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/POgDx9jgMpncPZhNJI/giphy.gif" alt="Q-Learning" width="300"/>
     
-  **Hiệu suất giữa các thuật toán** <img src="https://github.com/user-attachments/assets/508ac2c0-3c6b-4fbe-b289-3b68707f4496" alt="hieus" width="300"/>****
+  **Hiệu suất giữa các thuật toán** <img src="https://github.com/user-attachments/assets/508ac2c0-3c6b-4fbe-b289-3b68707f4496" alt="hieus" width="300"/>
 
   **Nhận xét**
   - Q-Learning mất 1.604 giây để tìm được lời giải chỉ với 4 bước đi, cho thấy nó đã học được một chính sách hành động hiệu quả sau quá trình huấn luyện. Tuy thời gian chạy có vẻ cao hơn so với các thuật toán tìm kiếm cổ điển như A* hay BFS, nhưng điều này là do giai đoạn học (training) tốn nhiều thời gian để cập nhật giá trị Q cho tất cả các trạng thái – đặc biệt trong không gian trạng thái lớn như 8 Puzzle.
