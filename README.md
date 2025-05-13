@@ -17,17 +17,12 @@ Lâm Văn Dỉ - 23110191
   - Giải pháp (Solution): chuỗi các hành động dẫn đến trạng thái đích.
     
   **Các thuật toán trong nhóm**
-  - **BFS (Breadth-First Search)**
-   - <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExN3l1ZTlyOGM2amF0ZG1rMnlocnhnY3FqZWY2MXcwNHhrcW83YW9leCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/GaOHKrpTiawcvoUjdZ/giphy.gif" alt="BFS" width="300"/>
-  - **DFS (Depth-First Search)**
-   - <img src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTY1NnExam5wdTgzY2s0cTZ0c2NpaXBibHV0eWJ5ZDl3dG12ZHQ4eCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/BLLDvdAt5X7spkifaK/giphy.gif" alt="DFS" width="300"/>
-  - **IDS (Iterative Deepening Search)**
-   - <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcXY2N2t3d3RsbjExcXppeThoMnA3a3loOHF4MXV0NXU0NXpnOHJpMyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/OgmVGLCc8j93VRUSJP/giphy.gif" alt="DFS" width="300"/>
-  - **UCS (Uniform Cost Search)**
-   - <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExN2ZtZGhqcDN4b3pkaWxidnhld3g5dHd1anNtNW9xN2k0bnljdnA2biZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/OFBhqteP3EwAEelSFt/giphy.gif" alt="DFS" width="300"/>
+  - **BFS (Breadth-First Search)** <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExN3l1ZTlyOGM2amF0ZG1rMnlocnhnY3FqZWY2MXcwNHhrcW83YW9leCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/GaOHKrpTiawcvoUjdZ/giphy.gif" alt="BFS" width="300"/>
+  - **DFS (Depth-First Search)** <img src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTY1NnExam5wdTgzY2s0cTZ0c2NpaXBibHV0eWJ5ZDl3dG12ZHQ4eCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/BLLDvdAt5X7spkifaK/giphy.gif" alt="DFS" width="300"/>
+  - **IDS (Iterative Deepening Search)** <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcXY2N2t3d3RsbjExcXppeThoMnA3a3loOHF4MXV0NXU0NXpnOHJpMyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/OgmVGLCc8j93VRUSJP/giphy.gif" alt="DFS" width="300"/>
+  - **UCS (Uniform Cost Search)** <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExN2ZtZGhqcDN4b3pkaWxidnhld3g5dHd1anNtNW9xN2k0bnljdnA2biZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/OFBhqteP3EwAEelSFt/giphy.gif" alt="DFS" width="300"/>
 
-   **Hiệu suất giữa các thuật toán
-    ![Hiệu suất nhóm 1](https://github.com/user-attachments/assets/3cfda135-790c-486c-9db8-ea5496adfcaf)
+   **Hiệu suất giữa các thuật toán <img src="https://github.com/user-attachments/assets/3cfda135-790c-486c-9db8-ea5496adfcaf" alt="hieu suat trong nhom 1" width="300"/>
    - Có thể thấy BFS tốt nhất về tốc độ và tối ưu độ dài đường đi
    - DFS tuy có thời gian nhanh nhưng về đường đi thì dài nhất trong 3 thuật toán còn lại
    - 2 thuật toán còn lại là IDS và UCS đều có cùng độ dài đường đi với thuật toán BFS là 23 bước, tuy nhiên UCS lại có tốc độ nhanh hơn IDS. Và hơn nữa là tuy IDS có số bước nhỏ nhưng tốc độ lại là lớn nhất
