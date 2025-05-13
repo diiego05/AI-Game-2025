@@ -40,6 +40,7 @@
   - Chi phí đường đi: Tổng số bước di chuyển
   - Hàm heuristic để dẫn đường tìm kiếm hiệu quả hơn.
   - Giải pháp (Solution): chuỗi các hành động dẫn đến trạng thái đích.
+    
   **Các thuật toán trong nhóm**
   - **Greedy Search**
   - **A Star**
@@ -55,6 +56,7 @@
   - Hàm đánh giá (Objective Function): khoảng cách Manhattan từ trạng thái hiện tại đến trạng thái đích.
   - Hàm lân cận: Trả về các trạng thái kế cận.
   - Giải pháp (Solution): chuỗi các hành động dẫn đến trạng thái đích.
+    
   **Các thuật toán trong nhóm**
   - **Simple Hill Climbing**
   - **Steepest-Ascent Hill Climbing**
@@ -71,6 +73,7 @@
   - Trạng thái không quan sát được hoàn toàn, hoặc thay đổi trong thời gian thực.
   - Cần xác định kế hoạch đảm bảo đạt đích trong mọi kịch bản.
   - Giải pháp (Solution): chuỗi các hành động dẫn đến trạng thái đích.
+    
   **Các thuật toán trong nhóm**
   - **AND - OR Search**
   - **Partially Observable**
@@ -84,6 +87,7 @@
   - Trạng thái không quan sát được hoàn toàn, hoặc thay đổi trong thời gian thực.
   - Cần xác định kế hoạch đảm bảo đạt đích trong mọi kịch bản.
   - Giải pháp (Solution): chuỗi các hành động dẫn đến trạng thái đích.
+    
   **Các thuật toán trong nhóm**
   - **Backtracking**
   - **AC3**
@@ -97,6 +101,7 @@
   - Phần thưởng (Reward) được cấp dựa trên hành động dẫn đến trạng thái mục tiêu.
   - Chính sách (Policy) dần được tối ưu hóa
   - Giải pháp (Solution): chuỗi các hành động dẫn đến trạng thái đích.
+    
   **Các thuật toán trong nhóm**
   - **Q-Learning** 
   **Hiệu suất giữa các thuật toán**
