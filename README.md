@@ -21,8 +21,8 @@
   **Các thuật toán trong nhóm**
   - **BFS (Breadth-First Search)** <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExN3l1ZTlyOGM2amF0ZG1rMnlocnhnY3FqZWY2MXcwNHhrcW83YW9leCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/GaOHKrpTiawcvoUjdZ/giphy.gif" alt="BFS" width="300"/>
   - **DFS (Depth-First Search)** <img src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTY1NnExam5wdTgzY2s0cTZ0c2NpaXBibHV0eWJ5ZDl3dG12ZHQ4eCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/BLLDvdAt5X7spkifaK/giphy.gif" alt="DFS" width="300"/>
-  - **IDS (Iterative Deepening Search)** <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcXY2N2t3d3RsbjExcXppeThoMnA3a3loOHF4MXV0NXU0NXpnOHJpMyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/OgmVGLCc8j93VRUSJP/giphy.gif" alt="DFS" width="300"/>
-  - **UCS (Uniform Cost Search)** <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExN2ZtZGhqcDN4b3pkaWxidnhld3g5dHd1anNtNW9xN2k0bnljdnA2biZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/OFBhqteP3EwAEelSFt/giphy.gif" alt="DFS" width="300"/>
+  - **IDS (Iterative Deepening Search)** <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcXY2N2t3d3RsbjExcXppeThoMnA3a3loOHF4MXV0NXU0NXpnOHJpMyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/OgmVGLCc8j93VRUSJP/giphy.gif" alt="IDS" width="300"/>
+  - **UCS (Uniform Cost Search)** <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExN2ZtZGhqcDN4b3pkaWxidnhld3g5dHd1anNtNW9xN2k0bnljdnA2biZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/OFBhqteP3EwAEelSFt/giphy.gif" alt="UCS" width="300"/>
 
    **Hiệu suất giữa các thuật toán** <img src="https://github.com/user-attachments/assets/3cfda135-790c-486c-9db8-ea5496adfcaf" alt="hieu suat trong nhom 1" width="300"/>
    
@@ -42,9 +42,9 @@
   - Giải pháp (Solution): chuỗi các hành động dẫn đến trạng thái đích.
     
   **Các thuật toán trong nhóm**
-  - **Greedy Search**
-  - **A Star**
-  - **IDA Star (Iterative Deepening A Star)**
+  - **Greedy Search** <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExb3hoZWxjNjB2ZGRrcmN3dW84YjZpYjI3Z3lqYnhhMDYxOGc5MHFucyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/u03HBnGcDL8hN132hG/giphy.gif" alt="Greedy" width="300"/>
+  - **A Star** <img src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExNG90YXNjbGxvb2xkaGJ0bm5kaHlxbnhueWU0NzNnb2Fib3NsNXV6aCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/uNKyhnsCUS4qH83H6x/giphy.gif" alt="A*" width="300"/>
+  - **IDA Star (Iterative Deepening A Star)** <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExbHg5eDZycW92d2xtbHhpdnE5bTI5YnIzbmE5MjhrMW5kM3ozejJiZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/WC2cRxvlxpcaWVYKB5/giphy.gif" alt="IDA*" width="300"/>
   **Hiệu suất giữa các thuật toán**
   **Nhận xét**
 
@@ -58,12 +58,12 @@
   - Giải pháp (Solution): chuỗi các hành động dẫn đến trạng thái đích.
     
   **Các thuật toán trong nhóm**
-  - **Simple Hill Climbing**
-  - **Steepest-Ascent Hill Climbing**
-  - **Stochastic Hill Climbing**
-  - **Simulated Annealing**
-  - **Genetic Algorithm**
-  - **Beam Search**
+  - **Simple Hill Climbing** <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExcTRlZjZhbTBoZjBxYTVnNWczZ3VrcWh6ZHV6MTZ1dHZiZHR6NXNvayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/kbskoNgNfnAiOlhM1x/giphy.gif" alt="SHC" width="300"/>
+  - **Steepest-Ascent Hill Climbing** <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExZmY5bTQ5ODVwZHQ2ankwdXdxNTFmbHE5c3JhYzJwcW8wamJhMXU3MiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/6liUIarF6oMdSR9E8U/giphy.gif" alt="SAHC" width="300"/> 
+  - **Stochastic Hill Climbing**  <img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExaG0xYXhhaHN4dmtxN3ByOHFyMG4wamE4dTNwY3FuM2pjOGoxb3FmdyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/lA320cgDqNtoNWmSTK/giphy.gif" alt="StoHC" width="300"/>
+  - **Simulated Annealing**  <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExeW51ZHI4MTZ3dTEyc3JiNHpndzh4ajFxdGllaDVya2V0MWl0bmg5OSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/jLP3xaJFDLFowPhngA/giphy.gif" alt="SA" width="300"/>
+  - **Genetic Algorithm**  <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExdHBra2Zrcmx6NTkzZTBxeDdwbjQ1dTlmanh1NWxobmk4eHVsbWl2bCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/MeHYIIHbAA29CKfvBY/giphy.gif" alt="GA" width="300"/>
+  - **Beam Search**  <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExZmMxY3hxaHE5amprMjF4eDE3MDZpbjZ5ZGxiZjlodmJmdnY3dTR3ZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/gQPy7HkN70BPuiyC1s/giphy.gif" alt="Beam" width="300"/>
   **Hiệu suất giữa các thuật toán**
   **Nhận xét**
 
@@ -75,8 +75,8 @@
   - Giải pháp (Solution): chuỗi các hành động dẫn đến trạng thái đích.
     
   **Các thuật toán trong nhóm**
-  - **AND - OR Search**
-  - **Partially Observable**
+  - **AND - OR Search** 
+  - **Partially Observable (Sensorless Search)** <img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZzZibHpueTM1OWFubmg4OXptY3BlNXN5YnBkZWg4djRibnoxdTV4cCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2LpgGVKWYrExi5XYko/giphy.gif" alt="Sensor" width="300"/>
   - **Unknown or Dynamic Environment (Không nhìn thấy hoàn toàn – tìm kiếm trong môi trường niềm tin)**
   **Hiệu suất giữa các thuật toán**
   **Nhận xét**
