@@ -14,15 +14,14 @@ Lâm Văn Dỉ - 23110191
   **Thành phần bài toán:**
   - Trạng thái: ma trận 3x3 gồm các số từ 0 đến 8 (0 là ô trống).
   - Hành động: di chuyển ô trống lên/xuống/trái/phải.
-  - Giải pháp (Solution) : chuỗi các hành động dẫn đến trạng thái đích.
+  - Giải pháp (Solution): chuỗi các hành động dẫn đến trạng thái đích.
+    
   **Các thuật toán trong nhóm**
   - **BFS (Breadth-First Search)**
 <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExN3l1ZTlyOGM2amF0ZG1rMnlocnhnY3FqZWY2MXcwNHhrcW83YW9leCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/GaOHKrpTiawcvoUjdZ/giphy.gif" alt="BFS" width="300"/>
+  - **DFS (Depth-First Search)**
+<img src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTY1NnExam5wdTgzY2s0cTZ0c2NpaXBibHV0eWJ5ZDl3dG12ZHQ4eCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/BLLDvdAt5X7spkifaK/giphy.gif" alt="DFS" width="300"/>
 
-DFS (Depth-First Search)
-
-
-![DFS](https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTY1NnExam5wdTgzY2s0cTZ0c2NpaXBibHV0eWJ5ZDl3dG12ZHQ4eCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/BLLDvdAt5X7spkifaK/giphy.gif)
 
 
 IDS (Iterative Deepening Search)
