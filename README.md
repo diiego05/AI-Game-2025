@@ -133,7 +133,7 @@
   **Hiệu suất giữa các thuật toán**
   - Hiệu suất Backtracking <img src="https://github.com/user-attachments/assets/717e0bfb-dadb-4bc9-8efb-abc4a7e8269c" alt="hss" width="300"/>
 
-  -Hiệu suất AC3 <img src="https://github.com/user-attachments/assets/f98bd7e0-a13d-44b9-b72e-1c00f932c0ff" alt="hieus" width="300"/>
+  - Hiệu suất AC3 <img src="https://github.com/user-attachments/assets/f98bd7e0-a13d-44b9-b72e-1c00f932c0ff" alt="hieus" width="300"/>
   
   **Nhận xét**
   - AC3 giúp loại bỏ các giá trị không hợp lệ trước khi giải, từ đó rút gọn không gian trạng thái. Trong kết quả trên, việc kết hợp AC3 với A* cho thời gian giải rất nhanh (0.024s) và lời giải ngắn (20 bước), trong khi dùng với SA thì giải được nhưng phải mất 36 bước
