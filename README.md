@@ -120,7 +120,7 @@
     
   **Các thuật toán trong nhóm**
   
-  *Backtracking** <img src="assets/bactr.gif" alt="Unknown" width="300"/>
+  **Backtracking** <img src="assets/bactr.gif" alt="Unknown" width="300"/>
 
   **AC3** <img src="assets/ac3.gif" alt="Unknown" width="300"/>
   
