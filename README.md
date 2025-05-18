@@ -25,7 +25,7 @@
   - **IDS (Iterative Deepening Search)** <img src="assets/ids.gif" alt="IDS" width="300"/>
   - **UCS (Uniform Cost Search)** <img src="assets/UCS.gif" alt="UCS" width="300"/>
 
-   **Hiệu suất giữa các thuật toán** <img src="assets/nhom1.png" alt="hieu suat trong nhom 1" width="300"/>
+   **Hiệu suất giữa các thuật toán** ![hieusuat1](assets/nhom1.png)
    
    **Nhận xét**
    - Breadth-First Search (BFS) tìm được lời giải tối ưu với độ dài 23 bước và mất 2.857 giây để hoàn thành. BFS duyệt theo mức (level) nên đảm bảo tìm được đường đi ngắn nhất về số bước, nhưng tiêu tốn nhiều bộ nhớ và thời gian hơn khi không sử dụng heuristic. Thời gian chạy tương đối cao cho thấy chi phí mở rộng theo chiều rộng tăng nhanh, đặc biệt khi không giới hạn độ sâu
@@ -51,7 +51,7 @@
   - **A Star** <img src="assets/a.gif" alt="A*" width="300"/>
   - **IDA Star (Iterative Deepening A Star)** <img src="assets/ida.gif" alt="IDA*" width="300"/>
   
-  **Hiệu suất giữa các thuật toán** <img src="assets/nhom2.png" alt="hieus" width="300"/>
+  **Hiệu suất giữa các thuật toán** ![hieusuat2](assets/nhom2.png)
   
   **Nhận xét**
   - Thuật toán A* mất khoảng 0.026 giây và tìm được lời giải chỉ với 23 bước. Kết quả này cho thấy A* hoạt động chính xác theo lý thuyết: nó sử dụng cả chi phí thực g(n) và hàm heuristic h(n) (Manhattan distance) để đảm bảo tìm ra đường đi tối ưu ngắn nhất
@@ -75,7 +75,7 @@
   - **Genetic Algorithm**  <img src="assets/ga.gif" alt="GA" width="300"/>
   - **Beam Search**  <img src="assets/beam.gif" alt="Beam" width="300"/>
   
-  **Hiệu suất giữa các thuật toán** <img src="assets/nhom3.png" alt="hieus" width="300"/>
+  **Hiệu suất giữa các thuật toán** ![hieusuat3](assets/nhom3.png)
 
   **Nhận xét**
   - Genetic Algorithm (GA) mất 0.041 giây để giải bài toán với 6 bước đi. GA sử dụng quần thể các cá thể (mỗi cá thể là một chuỗi hành động), đánh giá fitness và tiến hóa qua nhiều thế hệ. Thời gian tương đối nhanh và lời giải ngắn (6 bước) cho thấy GA đã thành công trong việc tìm được lời giải hợp lệ, dù không tối ưu nhất
@@ -100,7 +100,7 @@
   - **Partially Observable (Sensorless Search)** <img src="assets/Sensor.gif" alt="Sensor" width="300"/>
   - **Unknown or Dynamic Environment (Không nhìn thấy hoàn toàn – tìm kiếm trong môi trường niềm tin)** <img src="assets/unknown.png" alt="Unknown" width="300"/>
   
-  **Hiệu suất giữa các thuật toán** <img src="assets/nhom4.png" alt="hieus" width="300"/>
+  **Hiệu suất giữa các thuật toán** ![hieusuat4](assets/nhom4.png)
 
   **Nhận xét**
   - AND-OR Search cho kết quả rất nhanh (0.000 giây) nhưng không tìm được lời giải đến trạng thái mục tiêu (hiển thị “Not Goal”). Đây là thuật toán phù hợp cho các tình huống lập kế hoạch có điều kiện (conditional planning), nơi hành động có thể dẫn đến nhiều kết quả khác nhau. Tuy nhiên, với bài toán 8 Puzzle, AND-OR bị giới hạn do cách kiểm tra vòng lặp quá nghiêm ngặt (dùng chung visited set giữa các nhánh đệ quy), khiến nhiều nhánh hợp lệ bị loại bỏ. Ngoài ra, nếu trạng thái khởi đầu cách mục tiêu quá xa, thuật toán dễ bị cắt sớm do giới hạn độ sâu (depth limit)
@@ -126,7 +126,7 @@
   
   **Kiếm thử** <img src="assets/kiemthu.gif" alt="Unknown" width="300"/> 
         
-  **Hiệu suất giữa các thuật toán**  <img src="assets/nhom5.png" alt="Unknown" width="300"/> 
+  **Hiệu suất giữa các thuật toán**  ![hieusuat5](assets/nhom5.png)
 
   **Nhận xét**
   - AC3 & Backtracking: Thời gian gần tương đương (~1.5s), và số bước xử lý (steps) cũng rất lớn, khoảng 251.000 bước. Điều này cho thấy hai thuật toán này có mức độ tính toán nặng, có thể là do kích thước không gian tìm kiếm lớn hoặc việc ràng buộc các miền giá trị không hiệu quả tuyệt đối. Mặc dù AC3 thường có khả năng thu hẹp miền hiệu quả hơn, nhưng trong bài toán này không giúp giảm đáng kể số bước trong giai đoạn backtracking, nên tổng thời gian tương tự.
@@ -148,7 +148,7 @@
   **Các thuật toán trong nhóm**
   - **Q-Learning** <img src="assets/qlearning.gif" alt="Q-Learning" width="300"/>
     
-  **Hiệu suất giữa các thuật toán** <img src="assets/nhom6.png" alt="hieus" width="300"/>
+  **Hiệu suất giữa các thuật toán** ![hieusuat6](assets/nhom6.png)
 
   **Nhận xét**
   - Q-Learning mất 1.604 giây để tìm được lời giải chỉ với 4 bước đi, cho thấy nó đã học được một chính sách hành động hiệu quả sau quá trình huấn luyện. Tuy thời gian chạy có vẻ cao hơn so với các thuật toán tìm kiếm cổ điển như A* hay BFS, nhưng điều này là do giai đoạn học (training) tốn nhiều thời gian để cập nhật giá trị Q cho tất cả các trạng thái – đặc biệt trong không gian trạng thái lớn như 8 Puzzle.
