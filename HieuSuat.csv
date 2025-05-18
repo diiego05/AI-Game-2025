@@ -1,0 +1,21 @@
+Algorithm;Steps;Time;Success
+BFS;23;"2,857";1
+DFS;29;"3,727";1
+IDS;23;"8,558";1
+UCS;23;"3,673";1
+Greedy;79;"0,013";1
+A*;23;"0,026";1
+IDA*;23;"0,026";1
+Simple Hill;4;0;1
+Steepest-Hill;4;0;1
+Stochastic Hill;4;0;1
+Simulated Annealing;4;"0,003";1
+Genetic;6;"0,041";1
+Beam Search;4;"0,079";1
+And-Or Search;0;0;0
+Sensorless;2;"0,004";1
+Unknown;0;0;0
+Backtracking;251353;"1,508";1
+AC3;251352;"1,551";1
+KiemThu;8;0;1
+Q-Learning;4;"1,604";1
