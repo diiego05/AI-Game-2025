@@ -1,5 +1,4 @@
-# GIẢI CÂU ĐỐ 8 Ô CHỮ (8 PUZZEL SOLVER) BẰNG ỨNG DỤNG NHIỀU THUẬT TOÁN TÌM KIẾM TRÍ TUỆ NHÂN TẠO VÀ TRỰC QUAN HÓA CÁC THUẬT TOÁN
-## Lâm Văn Dỉ - 23110191
+# Lâm Văn Dỉ - 23110191
 ## 1.Mục tiêu
 - Dự án game 8-puzzel được xây dựng nhằm mục đích triển khai các thuật toán trong 6 nhóm thuật toán:
   - Uninform Search (Tìm kiếm không có thông tin)
