@@ -120,39 +120,21 @@
     
   **Các thuật toán trong nhóm**
   
-  **Backtracking**
-  - Backtracking cho 3 thuật toán: A*, BFS, Simulated Annealing
-      - <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExaGRyMTVxaGN6Y3l5YjI3ZW0xaDRueHo5YTZ6bnlvOXUxOXlmbzUxcSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/4zYgfekaf0rxekgEvo/giphy.gif" alt="BT(A*)" width="300"/>
-      - <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExemlmc3hrM3h1ZTVyOWNtM3MwaXZsOXBnZTY3M2VzMWF4czNhN3FvOCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/1nerndgr9D7iWAAR2G/giphy.gif" alt="BT(BFS)" width="300"/>
-      - <img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3Z0ZWtnejZ0amxsbGl0bzN5dzQ1eDZzd3FiYzZ3NHA5a3MxNDE1ZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/pn2G5V2S5ZLBdeRSGH/giphy.gif" alt="BT(SA)" width="300"/>
-      
-  **AC3**
-  - AC3 cho 3 thuật toán: A*, BFS, Simulated Annealing:
-      - <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTZwcGpjeWZyYTY4NmhxZzczaW05bG5wYm9kZHg0NmNmMGlsMHo5aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/x1r2mwIzYz2gjT5tIf/giphy.gif" alt="AC3(A*)" width="300"/>
-      - <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExdjVwc2NiMnI0N2pqbWoxanpuZ3d0Ynkwam1kbW15MHM2MW16ejJ3aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/1mVGDqDy9ajosWzUAL/giphy.gif" alt="AC3(BFS)" width="300"/>
-      - <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcnZhanBpcGQyNzBndmNjenFmcm96emppZDVtaXV4NHR3ejcwbGY1ciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/VOs5QIt3V6QZ3jtJ2J/giphy.gif" alt="AC3(SA)" width="300"/>
-        
-  **Hiệu suất giữa các thuật toán**
-  - Hiệu suất Backtracking <img src="https://github.com/user-attachments/assets/717e0bfb-dadb-4bc9-8efb-abc4a7e8269c" alt="hss" width="300"/>
+  **Backtracking** <img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZXhjMWgycTRjMmZ0YXlzdjV2eW1uM3hweWYyZGZyYWFnNTZwOXFoZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/cmYZTgbN2VabbrIc68/giphy.gif" alt="Unknown" width="300"/>
 
-  - Hiệu suất AC3 <img src="https://github.com/user-attachments/assets/f98bd7e0-a13d-44b9-b72e-1c00f932c0ff" alt="hieus" width="300"/>
+  **AC3** <img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExMTg3ZHp1d202N29rcjlyeDQzdDh3NW42aGVmajc4YmpuOTZremRuMSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/UOpUxk5NfSAEUr942N/giphy.gif" alt="Unknown" width="300"/>
   
-  **Nhận xét**
-  - AC3 giúp loại bỏ các giá trị không hợp lệ trước khi giải, từ đó rút gọn không gian trạng thái. Trong kết quả trên, việc kết hợp AC3 với A* cho thời gian giải rất nhanh (0.024s) và lời giải ngắn (20 bước), trong khi dùng với SA thì giải được nhưng phải mất 36 bước
-  - Backtracking (BT) sinh ngẫu nhiên các trạng thái đầu vào hợp lệ, sau đó áp dụng thuật toán giải. Ở đây, BT kết hợp A* cho kết quả cực kỳ tốt – chỉ 0.001s và 14 bước, cho thấy BT đã tạo ra một trạng thái khởi đầu rất gần mục tiêu. Tuy nhiên, nếu dùng với BFS thì rất chậm (13.248s), vì BFS không tận dụng tốt thông tin trạng thái ban đầu gần đích.
-  - Nhìn chung, BT + A* là tổ hợp tốt nhất về cả thời gian và số bước trong các thử nghiệm. Ngược lại, AC3 + SA và BT + SA đều chấp nhận được, nhưng số bước nhiều hơn do bản chất SA là tìm kiếm xác suất không tối ưu.
+  **Kiếm thử** <img src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExNno5ZW1obHFyYXF0OXJyODVsdjg2OGdidGczODd4bm84bXNvem5rdyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ltzeQAcU8gvutwwhqC/giphy.gif" alt="Unknown" width="300"/> 
+        
+  **Hiệu suất giữa các thuật toán**  <img src="https://github.com/user-attachments/assets/3982b045-df88-4d19-b5d2-384a05477d9b" alt="Unknown" width="300"/> 
 
-  | **Chiến lược kết hợp** | **Thuật toán giải**     | **Thời gian** | **Số bước** |
-  |------------------------|--------------------------|---------------|-------------|
-  | **AC3 → A\***          | A*                       | 0.024s        | 20 steps    |
-  | **AC3 → BFS**          | Breadth-First Search     | 1.732s        | 20 steps    |
-  | **AC3 → SA**           | Simulated Annealing      | 0.060s        | 36 steps    |
-  | **BT (A\*)**           | A*                       | 0.001s        | 14 steps    |
-  | **BT (BFS)**           | Breadth-First Search     | 13.248s       | 18 steps    |
-  | **BT (SA)**            | Simulated Annealing      | 0.061s        | 24 steps    |
+  **Nhận xét**
+  - AC3 & Backtracking: Thời gian gần tương đương (~1.5s), và số bước xử lý (steps) cũng rất lớn, khoảng 251.000 bước. Điều này cho thấy hai thuật toán này có mức độ tính toán nặng, có thể là do kích thước không gian tìm kiếm lớn hoặc việc ràng buộc các miền giá trị không hiệu quả tuyệt đối. Mặc dù AC3 thường có khả năng thu hẹp miền hiệu quả hơn, nhưng trong bài toán này không giúp giảm đáng kể số bước trong giai đoạn backtracking, nên tổng thời gian tương tự.
+  - Kiểm thử: Thời gian cực kỳ nhanh (0.000s) và số bước cực kỳ ít (8 bước). Điều này cho thấy thuật toán KiemThu hoạt động theo cách gán trực tiếp các giá trị theo mục tiêu (goal state) và kiểm tra tính hợp lệ không phải là một giải thuật tổng quát mà chỉ kiểm tra được trong một số điều kiện cụ thể (như trạng thái mục tiêu là duy nhất và không có xung đột).
 
   **Nhận xét chung về nhóm thuật toán**
-  - Nhóm thuật toán này cho thấy rằng kết hợp chiến lược tiền xử lý thông minh với thuật toán giải phù hợp sẽ mang lại hiệu quả vượt trội. Trong các thử nghiệm, tổ hợp Backtracking + A* tỏ ra tối ưu nhất cả về thời gian và độ ngắn lời giải, trong khi AC3 + A* cũng là một lựa chọn đáng tin cậy và ổn định
+  - KiemThu có tốc độ cao nhất, nhưng khả năng ứng dụng bị giới hạn
+  - AC3 và Backtracking tuy mất thời gian và bước nhiều, nhưng có khả năng tổng quát hơn để giải các bài toán ràng buộc phức tạp (CSP).
     
   ### 2.6 Học tăng cường (Reinforcement Learning)
   - Tìm chính sách hành động tối ưu (optimal policy) cho một agent (tác nhân) trong môi trường sao cho phần thưởng tích lũy là lớn nhất
