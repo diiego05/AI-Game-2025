@@ -20,12 +20,12 @@
   - Giải pháp (Solution): chuỗi các hành động dẫn đến trạng thái đích.
     
   **Các thuật toán trong nhóm**
-  - **BFS (Breadth-First Search)** <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExNmdjbDljbjduMWgxbWh1Y2FqeDVwM2o4OWt6cHk4ajk4bjYwYWl0ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/MhKI9xRgsd9qbB3w4l/giphy.gif" alt="BFS" width="300"/>
-  - **DFS (Depth-First Search)** <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExbmxkYzE5bDBxNzI0NWZwNXV0YTltbmh1a3dsOTRyY21wdG92aGxuYiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/KiE00EVn6ELXAQNCqS/giphy.gif" alt="DFS" width="300"/>
-  - **IDS (Iterative Deepening Search)** <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExcWdrY3QyeTRucXJtdWcxMnJmcTNiZXE4eDF4ODRtZ2g0M3Njc2ZlaiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/wvUpiBW45iZGRzsNWc/giphy.gif" alt="IDS" width="300"/>
-  - **UCS (Uniform Cost Search)** <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExcmZlOTJpYXB2cGlrNm9wZnhrcXpmZDkxazFhbG0zcjV4YnJzcnE1aSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/5v6NQODQS7JlVC7FOk/giphy.gif" alt="UCS" width="300"/>
+  - **BFS (Breadth-First Search)** <img src="assets/bfs.gif" alt="BFS" width="300"/>
+  - **DFS (Depth-First Search)** <img src="assets/dfs.gif" alt="DFS" width="300"/>
+  - **IDS (Iterative Deepening Search)** <img src="assets/ids.gif" alt="IDS" width="300"/>
+  - **UCS (Uniform Cost Search)** <img src="assets/UCS.gif" alt="UCS" width="300"/>
 
-   **Hiệu suất giữa các thuật toán** <img src="https://github.com/user-attachments/assets/3cfda135-790c-486c-9db8-ea5496adfcaf" alt="hieu suat trong nhom 1" width="300"/>
+   **Hiệu suất giữa các thuật toán** <img src="assets/nhom1.png" alt="hieu suat trong nhom 1" width="300"/>
    
    **Nhận xét**
    - Breadth-First Search (BFS) tìm được lời giải tối ưu với độ dài 23 bước và mất 2.857 giây để hoàn thành. BFS duyệt theo mức (level) nên đảm bảo tìm được đường đi ngắn nhất về số bước, nhưng tiêu tốn nhiều bộ nhớ và thời gian hơn khi không sử dụng heuristic. Thời gian chạy tương đối cao cho thấy chi phí mở rộng theo chiều rộng tăng nhanh, đặc biệt khi không giới hạn độ sâu
@@ -47,11 +47,11 @@
   - Giải pháp (Solution): chuỗi các hành động dẫn đến trạng thái đích.
     
   **Các thuật toán trong nhóm**
-  - **Greedy Search** <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExb3hoZWxjNjB2ZGRrcmN3dW84YjZpYjI3Z3lqYnhhMDYxOGc5MHFucyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/u03HBnGcDL8hN132hG/giphy.gif" alt="Greedy" width="300"/>
-  - **A Star** <img src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExNG90YXNjbGxvb2xkaGJ0bm5kaHlxbnhueWU0NzNnb2Fib3NsNXV6aCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/uNKyhnsCUS4qH83H6x/giphy.gif" alt="A*" width="300"/>
-  - **IDA Star (Iterative Deepening A Star)** <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExbHg5eDZycW92d2xtbHhpdnE5bTI5YnIzbmE5MjhrMW5kM3ozejJiZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/WC2cRxvlxpcaWVYKB5/giphy.gif" alt="IDA*" width="300"/>
+  - **Greedy Search** <img src="assets/greedy.gif" alt="Greedy" width="300"/>
+  - **A Star** <img src="assets/a.gif" alt="A*" width="300"/>
+  - **IDA Star (Iterative Deepening A Star)** <img src="assets/ida.gif" alt="IDA*" width="300"/>
   
-  **Hiệu suất giữa các thuật toán** <img src="https://github.com/user-attachments/assets/aef0f224-770c-456b-b335-86f28efe8884" alt="hieus" width="300"/>
+  **Hiệu suất giữa các thuật toán** <img src="assets/nhom2.png" alt="hieus" width="300"/>
   
   **Nhận xét**
   - Thuật toán A* mất khoảng 0.026 giây và tìm được lời giải chỉ với 23 bước. Kết quả này cho thấy A* hoạt động chính xác theo lý thuyết: nó sử dụng cả chi phí thực g(n) và hàm heuristic h(n) (Manhattan distance) để đảm bảo tìm ra đường đi tối ưu ngắn nhất
@@ -68,14 +68,14 @@
   - Giải pháp (Solution): chuỗi các hành động dẫn đến trạng thái đích.
     
   **Các thuật toán trong nhóm**
-  - **Simple Hill Climbing** <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExcTRlZjZhbTBoZjBxYTVnNWczZ3VrcWh6ZHV6MTZ1dHZiZHR6NXNvayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/kbskoNgNfnAiOlhM1x/giphy.gif" alt="SHC" width="300"/>
-  - **Steepest-Ascent Hill Climbing** <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExZmY5bTQ5ODVwZHQ2ankwdXdxNTFmbHE5c3JhYzJwcW8wamJhMXU3MiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/6liUIarF6oMdSR9E8U/giphy.gif" alt="SAHC" width="300"/> 
-  - **Stochastic Hill Climbing**  <img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExaG0xYXhhaHN4dmtxN3ByOHFyMG4wamE4dTNwY3FuM2pjOGoxb3FmdyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/lA320cgDqNtoNWmSTK/giphy.gif" alt="StoHC" width="300"/>
-  - **Simulated Annealing**  <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExeW51ZHI4MTZ3dTEyc3JiNHpndzh4ajFxdGllaDVya2V0MWl0bmg5OSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/jLP3xaJFDLFowPhngA/giphy.gif" alt="SA" width="300"/>
-  - **Genetic Algorithm**  <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExdHBra2Zrcmx6NTkzZTBxeDdwbjQ1dTlmanh1NWxobmk4eHVsbWl2bCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/MeHYIIHbAA29CKfvBY/giphy.gif" alt="GA" width="300"/>
-  - **Beam Search**  <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExZmMxY3hxaHE5amprMjF4eDE3MDZpbjZ5ZGxiZjlodmJmdnY3dTR3ZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/gQPy7HkN70BPuiyC1s/giphy.gif" alt="Beam" width="300"/>
+  - **Simple Hill Climbing** <img src="assets/hillclimbing.gif" alt="SHC" width="300"/>
+  - **Steepest-Ascent Hill Climbing** <img src="assets/STEEPEST.gif" alt="SAHC" width="300"/> 
+  - **Stochastic Hill Climbing**  <img src="assets/STO.gif" alt="StoHC" width="300"/>
+  - **Simulated Annealing**  <img src="assets/sa.gif" alt="SA" width="300"/>
+  - **Genetic Algorithm**  <img src="assets/ga.gif" alt="GA" width="300"/>
+  - **Beam Search**  <img src="assets/beam.gif" alt="Beam" width="300"/>
   
-  **Hiệu suất giữa các thuật toán** <img src="https://github.com/user-attachments/assets/3309ca0a-94d4-457f-a498-91f3dde670b7" alt="hieus" width="300"/>
+  **Hiệu suất giữa các thuật toán** <img src="assets/nhom3.png" alt="hieus" width="300"/>
 
   **Nhận xét**
   - Genetic Algorithm (GA) mất 0.041 giây để giải bài toán với 6 bước đi. GA sử dụng quần thể các cá thể (mỗi cá thể là một chuỗi hành động), đánh giá fitness và tiến hóa qua nhiều thế hệ. Thời gian tương đối nhanh và lời giải ngắn (6 bước) cho thấy GA đã thành công trong việc tìm được lời giải hợp lệ, dù không tối ưu nhất
@@ -97,10 +97,10 @@
   **Các thuật toán trong nhóm**
   - **AND - OR Search - BFS**
   - Không giải được hoặc giải được nhưng chạy rất lâu nên em không để vào đây
-  - **Partially Observable (Sensorless Search)** <img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZzZibHpueTM1OWFubmg4OXptY3BlNXN5YnBkZWg4djRibnoxdTV4cCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2LpgGVKWYrExi5XYko/giphy.gif" alt="Sensor" width="300"/>
-  - **Unknown or Dynamic Environment (Không nhìn thấy hoàn toàn – tìm kiếm trong môi trường niềm tin)** <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExZGp3aGppaDFmbHp3bXQyMjBsbzhsdWk4ZGt5cTE0Nmo4Y2s2ejc4ZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/N0IIfNC9MFumYBWNCi/giphy.gif" alt="Unknown" width="300"/>
+  - **Partially Observable (Sensorless Search)** <img src="assets/Sensor.gif" alt="Sensor" width="300"/>
+  - **Unknown or Dynamic Environment (Không nhìn thấy hoàn toàn – tìm kiếm trong môi trường niềm tin)** <img src="assets/unknown.png" alt="Unknown" width="300"/>
   
-  **Hiệu suất giữa các thuật toán** <img src="https://github.com/user-attachments/assets/381b0af4-2bde-4345-8eb2-b9bcca5b68f6" alt="hieus" width="300"/>
+  **Hiệu suất giữa các thuật toán** <img src="assets/nhom4.png" alt="hieus" width="300"/>
 
   **Nhận xét**
   - AND-OR Search cho kết quả rất nhanh (0.000 giây) nhưng không tìm được lời giải đến trạng thái mục tiêu (hiển thị “Not Goal”). Đây là thuật toán phù hợp cho các tình huống lập kế hoạch có điều kiện (conditional planning), nơi hành động có thể dẫn đến nhiều kết quả khác nhau. Tuy nhiên, với bài toán 8 Puzzle, AND-OR bị giới hạn do cách kiểm tra vòng lặp quá nghiêm ngặt (dùng chung visited set giữa các nhánh đệ quy), khiến nhiều nhánh hợp lệ bị loại bỏ. Ngoài ra, nếu trạng thái khởi đầu cách mục tiêu quá xa, thuật toán dễ bị cắt sớm do giới hạn độ sâu (depth limit)
@@ -120,13 +120,13 @@
     
   **Các thuật toán trong nhóm**
   
-  **Backtracking** <img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZXhjMWgycTRjMmZ0YXlzdjV2eW1uM3hweWYyZGZyYWFnNTZwOXFoZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/cmYZTgbN2VabbrIc68/giphy.gif" alt="Unknown" width="300"/>
+  *Backtracking** <img src="assets/bactr.gif" alt="Unknown" width="300"/>
 
-  **AC3** <img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExMTg3ZHp1d202N29rcjlyeDQzdDh3NW42aGVmajc4YmpuOTZremRuMSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/UOpUxk5NfSAEUr942N/giphy.gif" alt="Unknown" width="300"/>
+  **AC3** <img src="assets/ac3.gif" alt="Unknown" width="300"/>
   
-  **Kiếm thử** <img src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExNno5ZW1obHFyYXF0OXJyODVsdjg2OGdidGczODd4bm84bXNvem5rdyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ltzeQAcU8gvutwwhqC/giphy.gif" alt="Unknown" width="300"/> 
+  **Kiếm thử** <img src="assets/kiemthu.gif" alt="Unknown" width="300"/> 
         
-  **Hiệu suất giữa các thuật toán**  <img src="https://github.com/user-attachments/assets/3982b045-df88-4d19-b5d2-384a05477d9b" alt="Unknown" width="300"/> 
+  **Hiệu suất giữa các thuật toán**  <img src="assets/nhom5.png" alt="Unknown" width="300"/> 
 
   **Nhận xét**
   - AC3 & Backtracking: Thời gian gần tương đương (~1.5s), và số bước xử lý (steps) cũng rất lớn, khoảng 251.000 bước. Điều này cho thấy hai thuật toán này có mức độ tính toán nặng, có thể là do kích thước không gian tìm kiếm lớn hoặc việc ràng buộc các miền giá trị không hiệu quả tuyệt đối. Mặc dù AC3 thường có khả năng thu hẹp miền hiệu quả hơn, nhưng trong bài toán này không giúp giảm đáng kể số bước trong giai đoạn backtracking, nên tổng thời gian tương tự.
@@ -146,9 +146,9 @@
   - Giải pháp (Solution): chuỗi các hành động dẫn đến trạng thái đích.
     
   **Các thuật toán trong nhóm**
-  - **Q-Learning** <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExcnBic2w3Y3R1cmNzbXBrOXVlODF1bTViMTF6bDF5b2pydnE2MXd5dCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/POgDx9jgMpncPZhNJI/giphy.gif" alt="Q-Learning" width="300"/>
+  - **Q-Learning** <img src="assets/qlearning.gif" alt="Q-Learning" width="300"/>
     
-  **Hiệu suất giữa các thuật toán** <img src="https://github.com/user-attachments/assets/508ac2c0-3c6b-4fbe-b289-3b68707f4496" alt="hieus" width="300"/>
+  **Hiệu suất giữa các thuật toán** <img src="assets/nhom6.png" alt="hieus" width="300"/>
 
   **Nhận xét**
   - Q-Learning mất 1.604 giây để tìm được lời giải chỉ với 4 bước đi, cho thấy nó đã học được một chính sách hành động hiệu quả sau quá trình huấn luyện. Tuy thời gian chạy có vẻ cao hơn so với các thuật toán tìm kiếm cổ điển như A* hay BFS, nhưng điều này là do giai đoạn học (training) tốn nhiều thời gian để cập nhật giá trị Q cho tất cả các trạng thái – đặc biệt trong không gian trạng thái lớn như 8 Puzzle.
